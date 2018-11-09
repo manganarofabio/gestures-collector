@@ -2,7 +2,7 @@ import os, inspect, sys, thread
 import utils
 import cv2
 import numpy as np
-import msvcrt
+import json
 import time
 
 src_dir = os.path.dirname(inspect.getfile(inspect.currentframe()))
@@ -14,6 +14,8 @@ arch_dir = './leap_lib'
 sys.path.insert(0, os.path.abspath(os.path.join(src_dir, arch_dir)))
 
 import Leap
+
+
 
 bottomLeftCornerOfText = (0, 50)
 font = cv2.FONT_HERSHEY_SIMPLEX
@@ -72,6 +74,10 @@ class Gesture:
 
                 cv2.imshow('img', undistorted_right)
                 cv2.imwrite("{}.jpg".format(frame_counter), undistorted_right)
+                #scrittura file
+                with open("{}.txt".format(frame_counter), 'w') as outfile:
+                    json.dump(utils.frame2json_struct(frame), outfile)
+
                 img = np.zeros((400, 1000))
                 cv2.putText(img, "recording - press S to stop",
                             bottomLeftCornerOfText,
@@ -103,7 +109,7 @@ class Session:
 
 
 
-    def start_session(self):
+    def run_session(self):
 
         os.chdir(self.dir)
 
@@ -141,49 +147,66 @@ class Session:
 
 def run(controller):
 
-    print "press E to register new session of recording"
-    img = np.zeros((400, 1000))
-    cv2.putText(img, "press E to register new session of recording",
-                bottomLeftCornerOfText,
-                font,
-                fontScale,
-                fontColor,
-                lineType)
+    session_counter = 1
+    while True:
 
-    cv2.imshow('', img)
-    # cv2.imshow('', np.zeros((1, 1)))
-    while cv2.waitKey() != ord('e'):
-        pass
-
-    sess = Session(id_session=1, controller=controller)
-
-    # creazione directory per sessione
-    directory = "./{}".format(sess.id_session)
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-    else:
-
-        print "insert new session_id and press enter"
-        # id = raw_input()
-        img = np.zeros((400, 1000))
-        cv2.putText(img, "insert new session_id",
-                    bottomLeftCornerOfText,
-                    font,
-                    fontScale,
-                    fontColor,
-                    lineType)
-
+        if session_counter == 1:
+            img = np.zeros((400, 1000))
+            cv2.putText(img, "press E to start new session of recording",
+                        bottomLeftCornerOfText,
+                        font,
+                        fontScale,
+                        fontColor,
+                        lineType)
+            print "press E to register new session of recording"
+        else:
+            img = np.zeros((400, 1000))
+            cv2.putText(img, "press E to start new session of recording or Q to quit",
+                        bottomLeftCornerOfText,
+                        font,
+                        fontScale,
+                        fontColor,
+                        lineType)
+            print "press E to start new session of recording or Q to quit"
         cv2.imshow('', img)
-        while True:
-            sess.id_session = chr(cv2.waitKey())
-            directory = "./{}".format(sess.id_session)
-            if not os.path.exists(directory):
-                os.makedirs(directory)
-                break
+        k = cv2.waitKey()
+        if k == ord('e'):
+            pass
+        elif k == ord('q'):
+            print "end collection"
+            break
+        sess = Session(id_session=session_counter, controller=controller)
 
-    sess.dir = directory
-    print "session {} started".format(sess.id_session)
-    sess.start_session()
+        # creazione directory per sessione
+        directory = "./{}".format(sess.id_session)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        else:
+
+            print "insert new session_id and press enter"
+            # id = raw_input()
+            img = np.zeros((400, 1000))
+            cv2.putText(img, "insert new session_id",
+                        bottomLeftCornerOfText,
+                        font,
+                        fontScale,
+                        fontColor,
+                        lineType)
+
+            cv2.imshow('', img)
+            while True:
+                sess.id_session = chr(cv2.waitKey())
+                directory = "./{}".format(sess.id_session)
+                session_counter = int(sess.id_session)
+                if not os.path.exists(directory):
+                    os.makedirs(directory)
+                    break
+
+        sess.dir = directory
+        print "session {} started".format(sess.id_session)
+        sess.run_session()
+        os.chdir('..')
+        session_counter += 1
 
 
 
