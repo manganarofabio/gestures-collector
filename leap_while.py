@@ -32,10 +32,11 @@ class Gesture:
     gesture_dir = 0
     gesture_id = 0
 
-    def __init__(self, gesture_id, gesture_dir, controller):
+    def __init__(self, gesture_id, gesture_dir, controller, id_session):
         self.gesture_id = gesture_id
         self.controller = controller
         self.gesture_dir = gesture_dir
+        self.session = id_session
 
 
 
@@ -43,10 +44,19 @@ class Gesture:
 
         frame_counter = 0
         print "recording"
-        directory = "./{}".format(self.gesture_dir)
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-            os.chdir(directory)
+        directory_r_r = "./data/{0}/{1}/R/raw".format(self.session, self.gesture_dir)
+        directory_l_r = "./data/{0}/{1}/L/raw".format(self.session, self.gesture_dir)
+        directory_r_u = "./data/{0}/{1}/R/undistorted".format(self.session, self.gesture_dir)
+        directory_l_u = "./data/{0}/{1}/L/undistorted".format(self.session, self.gesture_dir)
+
+        if not os.path.exists(directory_r_r)and not os.path.exists(directory_l_r) and \
+                not os.path.exists(directory_r_u)and not os.path.exists(directory_l_u):
+            os.makedirs(directory_r_r)
+            os.makedirs(directory_l_r)
+            os.makedirs(directory_r_u)
+            os.makedirs(directory_l_u)
+
+            #os.chdir(directory)
         else:
             exit(10)
 
@@ -59,24 +69,37 @@ class Gesture:
             frame = self.controller.frame()
             # previous = self.controller.frame(1)
 
-            image = frame.images[0]
+            image_l = frame.images[0]
+            image_r = frame.images[1]
 
             frame_shown = False
 
-            if image.is_valid:
+            if image_l.is_valid and image_r.is_valid:
                 if not self.maps_initialized:
-                    left_coordinates, left_coefficients = utils.convert_distortion_maps(frame.images[0])
-                    right_coordinates, right_coefficients = utils.convert_distortion_maps(frame.images[1])
+                    left_coordinates, left_coefficients = utils.convert_distortion_maps(image_l)
+                    right_coordinates, right_coefficients = utils.convert_distortion_maps(image_r)
                     self.maps_initialized = True
 
-                undistorted_left = utils.undistort(image, left_coordinates, left_coefficients, 400, 400)
-                undistorted_right = utils.undistort(image, right_coordinates, right_coefficients, 400, 400)
+                # raw_img = np.zeros((image.width, image.height))
+                # buff = image.data
+                raw_img_l = utils.get_raw_image(image_l)
+                raw_img_r = utils.get_raw_image(image_r)
+                # undistorted images
+                undistorted_left = utils.undistort(image_l, left_coordinates, left_coefficients, 400, 400)
+                undistorted_right = utils.undistort(image_r, right_coordinates, right_coefficients, 400, 400)
 
                 cv2.imshow('img', undistorted_right)
-                cv2.imwrite("{}.jpg".format(frame_counter), undistorted_right)
-                #scrittura file
-                with open("{}.txt".format(frame_counter), 'w') as outfile:
-                    json.dump(utils.frame2json_struct(frame), outfile)
+                # write undistorted
+                cv2.imwrite("{0}/{1}_ur.jpg".format(directory_r_u, frame_counter), undistorted_right)
+                cv2.imwrite("{0}/{1}_ul.jpg".format(directory_l_u, frame_counter), undistorted_left)
+                # write raw
+                cv2.imwrite("{0}/{1}_rr.jpg".format(directory_r_r, frame_counter), raw_img_r)
+                cv2.imwrite("{0}/{1}_rl.jpg".format(directory_l_r, frame_counter), raw_img_l)
+
+
+                # #scrittura file TO DO
+                # with open("{}.txt".format(frame_counter), 'w') as outfile:
+                #     json.dumps(utils.frame2json_struct(frame), outfile)
 
                 img = np.zeros((400, 1000))
                 cv2.putText(img, "recording - press S to stop",
@@ -111,7 +134,7 @@ class Session:
 
     def run_session(self):
 
-        os.chdir(self.dir)
+        #os.chdir(self.dir)
 
         #ciclo di tutte le gesture - prova 2 gesture
         for i in range(0, len(gestures)):
@@ -131,19 +154,11 @@ class Session:
             #     print "press s to start recording gesture {}".format(i)
             #     c = raw_input()
 
-            g = Gesture(i, gestures[i], self.controller)
+            g = Gesture(i, gestures[i], self.controller, self.id_session)
             g.record()
-            os.chdir('..')
+            #os.chdir('..')
 
         print "recording session ended"
-
-
-
-
-
-
-
-
 
 def run(controller):
 
@@ -178,7 +193,7 @@ def run(controller):
         sess = Session(id_session=session_counter, controller=controller)
 
         # creazione directory per sessione
-        directory = "./{}".format(sess.id_session)
+        directory = "./data/{}".format(sess.id_session)
         if not os.path.exists(directory):
             os.makedirs(directory)
         else:
@@ -196,7 +211,7 @@ def run(controller):
             cv2.imshow('', img)
             while True:
                 sess.id_session = chr(cv2.waitKey())
-                directory = "./{}".format(sess.id_session)
+                directory = "./data/{}".format(sess.id_session)
                 session_counter = int(sess.id_session)
                 if not os.path.exists(directory):
                     os.makedirs(directory)
@@ -205,7 +220,7 @@ def run(controller):
         sess.dir = directory
         print "session {} started".format(sess.id_session)
         sess.run_session()
-        os.chdir('..')
+        #os.chdir('..')
         session_counter += 1
 
 
@@ -218,7 +233,7 @@ def main():
 
     if not os.path.exists("./data"):
         os.makedirs("./data")
-    os.chdir("./data")
+    #os.chdir("./data")
     # thread.start_new_thread(start_session, ())
     run(controller)
 

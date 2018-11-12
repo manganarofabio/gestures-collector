@@ -73,28 +73,38 @@ def undistort(image, coordinate_map, coefficient_map, width, height):
                              cv2.INTER_LINEAR)
     return destination
 
+def get_raw_image(image):
+    image_buffer_ptr = image.data_pointer
+    ctype_array_def = ctypes.c_ubyte * image.width * image.height
+    as_ctype_array = ctype_array_def.from_address(int(image_buffer_ptr))
+    as_numpy_array = np.ctypeslib.as_array(as_ctype_array)
+    return as_numpy_array
 
+
+
+#TODO
 #right hand from frame.hands
 def frame2json_struct(frame):
 
     j_frame = {}
+    f = None
     if frame.is_valid:
         f = frame
+    else:
+        j_frame['frame'] = 'invalid'
 
+    h = None
     for hand in frame.hands:
         if hand.is_right and hand.is_valid:
             h = hand
 
     if h is None:
         j_frame['frame'] = 'invalid'
-
         return j_frame
 
     fingers_list = []
     for i, finger in enumerate(h.fingers):
-        print finger.id
         fingers_list.append(finger)
-
 
     bones = {
         't': {
@@ -136,16 +146,16 @@ def frame2json_struct(frame):
         'timestamp': f.timestamp,
         'right_hand': {
             'id': h.id,
-            'palm_position': h.palm_position,
-            'palm_normal': h.palm_normal,
-            'direction': h.direction,
+            'palm_position': [h.palm_position.x, h.palm_position.y, h.palm_position.z, h.palm_position.pitch, h.palm_position.yaw, h.palm_position.roll],
+            'palm_normal': [h.palm_normal.x, h.palm_normal.y, h.palm_normal.z, h.palm_normal.pitch, h.palm_normal.yaw, h.palm_normal.roll],
+            'direction': [h.palm_direction.x, h.palm_direction.y, h.palm_direction.z, h.palm_direction.pitch, h.palm_direction.yaw, h.palm_direction.roll],
             'direction_pitch': h.direction.pitch * Leap.RAD_TO_DEG,
-            'normal_roll': h.palm.normal.roll * Leap.RAD_TO_DEG,
+            'normal_roll': h.palm_normal.roll * Leap.RAD_TO_DEG,
             'direction_yaw': h.direction.yaw * Leap.RAD_TO_DEG,
             'fingers': {
                 'thumb': {
                     'id': fingers_list[0].id,
-                    'length': fingers_list[0].lenght,
+                    'length': fingers_list[0].length,
                     'width': fingers_list[0].width,
                     'bones': {
                         'metacarpal': {
@@ -172,7 +182,7 @@ def frame2json_struct(frame):
                 },
                 'index': {
                     'id': fingers_list[1].id,
-                    'length': fingers_list[1].lenght,
+                    'length': fingers_list[1].length,
                     'width': fingers_list[1].width,
                     'bones': {
                         'metacarpal': {
@@ -199,7 +209,7 @@ def frame2json_struct(frame):
                 },
                 'middle': {
                     'id': fingers_list[2].id,
-                    'length': fingers_list[2].lenght,
+                    'length': fingers_list[2].length,
                     'width': fingers_list[2].width,
                     'bones': {
                         'metacarpal': {
@@ -226,7 +236,7 @@ def frame2json_struct(frame):
                 },
                 'ring': {
                     'id': fingers_list[3].id,
-                    'length': fingers_list[3].lenght,
+                    'length': fingers_list[3].length,
                     'width': fingers_list[3].width,
                     'bones': {
                         'metacarpal': {
@@ -253,7 +263,7 @@ def frame2json_struct(frame):
                 },
                 'pinky': {
                     'id': fingers_list[4].id,
-                    'length': fingers_list[4].lenght,
+                    'length': fingers_list[4].length,
                     'width': fingers_list[4].width,
                     'bones': {
                         'metacarpal': {
@@ -281,9 +291,9 @@ def frame2json_struct(frame):
 
             },
             'arm': {
-                'direction': h.arm.direction,
-                'wrist_position': h.arm.wrist_position,
-                'elbow_position': h.arm.elbow_position
+                'direction': [h.arm.direction.x, h.arm.direction.y, h.arm.direction.z, h.arm.direction.pitch, h.arm.direction.yaw, h.arm.direction.roll],
+                'wrist_position': [h.arm.wrist_position.x, h.arm.wrist_position.y, h.arm.wrist_position.z, h.arm.wrist_position.pitch, h.arm.wrist_position.yaw, h.arm.wrist_position.roll],
+                'elbow_position': [h.arm.elbow_position.x, h.arm.elbow_position.y, h.arm.elbow_position.z, h.arm.elbow_position.pitch, h.arm.elbow_position.yaw, h.arm.elbow_position.roll],
             },
 
 
