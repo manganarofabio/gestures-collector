@@ -44,11 +44,11 @@ class Gesture:
 
         frame_counter = 0
         print "recording"
-        directory_r_r = "./data/{0}/{1}/R/raw".format(self.session, self.gesture_dir)
-        directory_l_r = "./data/{0}/{1}/L/raw".format(self.session, self.gesture_dir)
-        directory_r_u = "./data/{0}/{1}/R/undistorted".format(self.session, self.gesture_dir)
-        directory_l_u = "./data/{0}/{1}/L/undistorted".format(self.session, self.gesture_dir)
-        directory_leap_info = "./data/{0}/{1}/leap_motion_json".format(self.session, self.gesture_dir)
+        directory_r_r = "./data/{0}/{1}_{2}/R/raw".format(self.session, self.gesture_id, self.gesture_dir)
+        directory_l_r = "./data/{0}/{1}_{2}/L/raw".format(self.session, self.gesture_id, self.gesture_dir)
+        directory_r_u = "./data/{0}/{1}_{2}/R/undistorted".format(self.session, self.gesture_id, self.gesture_dir)
+        directory_l_u = "./data/{0}/{1}_{2}/L/undistorted".format(self.session, self.gesture_id, self.gesture_dir)
+        directory_leap_info = "./data/{0}/{1}_{2}/leap_motion_json".format(self.session, self.gesture_id, self.gesture_dir)
 
         if not os.path.exists(directory_r_r)and not os.path.exists(directory_l_r) and \
                 not os.path.exists(directory_r_u)and not os.path.exists(directory_l_u) and not os.path.exists(directory_leap_info):
@@ -142,7 +142,7 @@ class Session:
         #ciclo di tutte le gesture - prova 2 gesture
         for i in range(0, len(gestures)):
             img = np.zeros((400, 1000))
-            cv2.putText(img, "press S to start recording {}".format(gestures[i]),
+            cv2.putText(img, "press S to start recording {0}: {1}".format(i, gestures[i]),
                         bottomLeftCornerOfText,
                         font,
                         fontScale,
