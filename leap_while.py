@@ -48,13 +48,15 @@ class Gesture:
         directory_l_r = "./data/{0}/{1}/L/raw".format(self.session, self.gesture_dir)
         directory_r_u = "./data/{0}/{1}/R/undistorted".format(self.session, self.gesture_dir)
         directory_l_u = "./data/{0}/{1}/L/undistorted".format(self.session, self.gesture_dir)
+        directory_leap_info = "./data/{0}/{1}/leap_motion_json".format(self.session, self.gesture_dir)
 
         if not os.path.exists(directory_r_r)and not os.path.exists(directory_l_r) and \
-                not os.path.exists(directory_r_u)and not os.path.exists(directory_l_u):
+                not os.path.exists(directory_r_u)and not os.path.exists(directory_l_u) and not os.path.exists(directory_leap_info):
             os.makedirs(directory_r_r)
             os.makedirs(directory_l_r)
             os.makedirs(directory_r_u)
             os.makedirs(directory_l_u)
+            os.makedirs(directory_leap_info)
 
             #os.chdir(directory)
         else:
@@ -80,8 +82,7 @@ class Gesture:
                     right_coordinates, right_coefficients = utils.convert_distortion_maps(image_r)
                     self.maps_initialized = True
 
-                # raw_img = np.zeros((image.width, image.height))
-                # buff = image.data
+
                 raw_img_l = utils.get_raw_image(image_l)
                 raw_img_r = utils.get_raw_image(image_r)
                 # undistorted images
@@ -98,8 +99,10 @@ class Gesture:
 
 
                 # #scrittura file TO DO
-                # with open("{}.txt".format(frame_counter), 'w') as outfile:
-                #     json.dumps(utils.frame2json_struct(frame), outfile)
+                with open("{0}/{1}.json".format(directory_leap_info, frame_counter), 'w') as outfile:
+                    j_frame = utils.frame2json_struct(frame)
+                    obj = json.dumps(j_frame, ensure_ascii=False)
+                    json.dump(obj, outfile)
 
                 img = np.zeros((400, 1000))
                 cv2.putText(img, "recording - press S to stop",

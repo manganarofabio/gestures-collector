@@ -148,149 +148,155 @@ def frame2json_struct(frame):
             'id': h.id,
             'palm_position': [h.palm_position.x, h.palm_position.y, h.palm_position.z, h.palm_position.pitch, h.palm_position.yaw, h.palm_position.roll],
             'palm_normal': [h.palm_normal.x, h.palm_normal.y, h.palm_normal.z, h.palm_normal.pitch, h.palm_normal.yaw, h.palm_normal.roll],
-            'direction': [h.palm_direction.x, h.palm_direction.y, h.palm_direction.z, h.palm_direction.pitch, h.palm_direction.yaw, h.palm_direction.roll],
-            'direction_pitch': h.direction.pitch * Leap.RAD_TO_DEG,
-            'normal_roll': h.palm_normal.roll * Leap.RAD_TO_DEG,
-            'direction_yaw': h.direction.yaw * Leap.RAD_TO_DEG,
-            'fingers': {
-                'thumb': {
-                    'id': fingers_list[0].id,
-                    'length': fingers_list[0].length,
-                    'width': fingers_list[0].width,
-                    'bones': {
-                        'metacarpal': {
-                            'prev_joint': bones['t']['metacarpal'].prev_joint,
-                            'next_joint': bones['t']['metacarpal'].next_joint,
-                            'direction': bones['t']['metacarpal'].direction
-                        },
-                        'proximal': {
-                            'prev_joint': bones['t']['proximal'].prev_joint,
-                            'next_joint': bones['t']['proximal'].next_joint,
-                            'direction': bones['t']['proximal'].direction
-                        },
-                        'intermediate': {
-                            'prev_joint': bones['t']['intermediate'].prev_joint,
-                            'next_joint': bones['t']['intermediate'].next_joint,
-                            'direction': bones['t']['intermediate'].direction
-                        },
-                        'distal': {
-                            'prev_joint': bones['t']['distal'].prev_joint,
-                            'next_joint': bones['t']['distal'].next_joint,
-                            'direction': bones['t']['distal'].direction
-                        }
-                    }
-                },
-                'index': {
-                    'id': fingers_list[1].id,
-                    'length': fingers_list[1].length,
-                    'width': fingers_list[1].width,
-                    'bones': {
-                        'metacarpal': {
-                            'prev_joint': bones['i']['metacarpal'].prev_joint,
-                            'next_joint': bones['i']['metacarpal'].next_joint,
-                            'direction': bones['i']['metacarpal'].direction
-                        },
-                        'proximal': {
-                            'prev_joint': bones['i']['proximal'].prev_joint,
-                            'next_joint': bones['i']['proximal'].next_joint,
-                            'direction': bones['i']['proximal'].direction
-                        },
-                        'intermediate': {
-                            'prev_joint': bones['i']['intermediate'].prev_joint,
-                            'next_joint': bones['i']['intermediate'].next_joint,
-                            'direction': bones['i']['intermediate'].direction
-                        },
-                        'distal': {
-                            'prev_joint': bones['i']['distal'].prev_joint,
-                            'next_joint': bones['i']['distal'].next_joint,
-                            'direction': bones['i']['distal'].direction
-                        }
-                    }
-                },
-                'middle': {
-                    'id': fingers_list[2].id,
-                    'length': fingers_list[2].length,
-                    'width': fingers_list[2].width,
-                    'bones': {
-                        'metacarpal': {
-                            'prev_joint': bones['m']['metacarpal'].prev_joint,
-                            'next_joint': bones['m']['metacarpal'].next_joint,
-                            'direction': bones['m']['metacarpal'].direction
-                        },
-                        'proximal': {
-                            'prev_joint': bones['m']['proximal'].prev_joint,
-                            'next_joint': bones['m']['proximal'].next_joint,
-                            'direction': bones['m']['proximal'].direction
-                        },
-                        'intermediate': {
-                            'prev_joint': bones['m']['intermediate'].prev_joint,
-                            'next_joint': bones['m']['intermediate'].next_joint,
-                            'direction': bones['m']['intermediate'].direction
-                        },
-                        'distal': {
-                            'prev_joint': bones['m']['distal'].prev_joint,
-                            'next_joint': bones['m']['distal'].next_joint,
-                            'direction': bones['m']['distal'].direction
-                        }
-                    }
-                },
-                'ring': {
-                    'id': fingers_list[3].id,
-                    'length': fingers_list[3].length,
-                    'width': fingers_list[3].width,
-                    'bones': {
-                        'metacarpal': {
-                            'prev_joint': bones['r']['metacarpal'].prev_joint,
-                            'next_joint': bones['r']['metacarpal'].next_joint,
-                            'direction': bones['r']['metacarpal'].direction
-                        },
-                        'proximal': {
-                            'prev_joint': bones['r']['proximal'].prev_joint,
-                            'next_joint': bones['r']['proximal'].next_joint,
-                            'direction': bones['r']['proximal'].direction
-                        },
-                        'intermediate': {
-                            'prev_joint': bones['r']['intermediate'].prev_joint,
-                            'next_joint': bones['r']['intermediate'].next_joint,
-                            'direction': bones['r']['intermediate'].direction
-                        },
-                        'distal': {
-                            'prev_joint': bones['r']['distal'].prev_joint,
-                            'next_joint': bones['r']['distal'].next_joint,
-                            'direction': bones['r']['distal'].direction
-                        }
-                    }
-                },
-                'pinky': {
-                    'id': fingers_list[4].id,
-                    'length': fingers_list[4].length,
-                    'width': fingers_list[4].width,
-                    'bones': {
-                        'metacarpal': {
-                            'prev_joint': bones['p']['metacarpal'].prev_joint,
-                            'next_joint': bones['p']['metacarpal'].next_joint,
-                            'direction': bones['p']['metacarpal'].direction
-                        },
-                        'proximal': {
-                            'prev_joint': bones['p']['proximal'].prev_joint,
-                            'next_joint': bones['p']['proximal'].next_joint,
-                            'direction': bones['p']['proximal'].direction
-                        },
-                        'intermediate': {
-                            'prev_joint': bones['p']['intermediate'].prev_joint,
-                            'next_joint': bones['p']['intermediate'].next_joint,
-                            'direction': bones['p']['intermediate'].direction
-                        },
-                        'distal': {
-                            'prev_joint': bones['p']['distal'].prev_joint,
-                            'next_joint': bones['p']['distal'].next_joint,
-                            'direction': bones['p']['distal'].direction
-                        }
-                    }
-                }
-
-            },
+            'palm_velocity': [h.palm_velocity.x, h.palm_velocity.y, h.palm_velocity.z, h.palm_velocity.pitch, h.palm_velocity.yaw, h.palm_velocity.roll],
+            'palm_width': h.palm_width,
+            'pinch_strength': h.pinch_strength,
+            'grab_strength': h.grab_strength,
+            'direction': [h.direction.x, h.direction.y, h.direction.z, h.direction.pitch, h.direction.yaw, h.direction.roll],
+            # 'direction_pitch': h.direction.pitch * Leap.RAD_TO_DEG,
+            # 'normal_roll': h.palm_normal.roll * Leap.RAD_TO_DEG,
+            # 'direction_yaw': h.direction.yaw * Leap.RAD_TO_DEG,
+            # 'fingers': {
+            #     'thumb': {
+            #         'id': fingers_list[0].id,
+            #         'length': fingers_list[0].length,
+            #         'width': fingers_list[0].width,
+            #         'bones': {
+            #             'metacarpal': {
+            #                 'prev_joint': bones['t']['metacarpal'].prev_joint,
+            #                 'next_joint': bones['t']['metacarpal'].next_joint,
+            #                 #'direction': bones['t']['metacarpal'].direction
+            #             },
+            #             'proximal': {
+            #                 'prev_joint': bones['t']['proximal'].prev_joint,
+            #                 'next_joint': bones['t']['proximal'].next_joint,
+            #                 #'direction': bones['t']['proximal'].direction
+            #             },
+            #             'intermediate': {
+            #                 'prev_joint': bones['t']['intermediate'].prev_joint,
+            #                 'next_joint': bones['t']['intermediate'].next_joint,
+            #                 #'direction': bones['t']['intermediate'].direction
+            #             },
+            #             'distal': {
+            #                 'prev_joint': bones['t']['distal'].prev_joint,
+            #                 'next_joint': bones['t']['distal'].next_joint,
+            #                 #'direction': bones['t']['distal'].direction
+            #             }
+            #         }
+            #     },
+            #
+            #     'index': {
+            #         'id': fingers_list[1].id,
+            #         'length': fingers_list[1].length,
+            #         'width': fingers_list[1].width,
+            #         'bones': {
+            #             'metacarpal': {
+            #                 'prev_joint': bones['i']['metacarpal'].prev_joint,
+            #                 'next_joint': bones['i']['metacarpal'].next_joint,
+            #                 #'direction': bones['i']['metacarpal'].direction
+            #             },
+            #             'proximal': {
+            #                 'prev_joint': bones['i']['proximal'].prev_joint,
+            #                 'next_joint': bones['i']['proximal'].next_joint,
+            #                 #'direction': bones['i']['proximal'].direction
+            #             },
+            #             'intermediate': {
+            #                 'prev_joint': bones['i']['intermediate'].prev_joint,
+            #                 'next_joint': bones['i']['intermediate'].next_joint,
+            #                 #'direction': bones['i']['intermediate'].direction
+            #             },
+            #             'distal': {
+            #                 'prev_joint': bones['i']['distal'].prev_joint,
+            #                 'next_joint': bones['i']['distal'].next_joint,
+            #                 #'direction': bones['i']['distal'].direction
+            #             }
+            #         }
+            #     },
+            #     'middle': {
+            #         'id': fingers_list[2].id,
+            #         'length': fingers_list[2].length,
+            #         'width': fingers_list[2].width,
+            #         'bones': {
+            #             'metacarpal': {
+            #                 'prev_joint': bones['m']['metacarpal'].prev_joint,
+            #                 'next_joint': bones['m']['metacarpal'].next_joint,
+            #                 #'direction': bones['m']['metacarpal'].direction
+            #             },
+            #             'proximal': {
+            #                 'prev_joint': bones['m']['proximal'].prev_joint,
+            #                 'next_joint': bones['m']['proximal'].next_joint,
+            #                 #'direction': bones['m']['proximal'].direction
+            #             },
+            #             'intermediate': {
+            #                 'prev_joint': bones['m']['intermediate'].prev_joint,
+            #                 'next_joint': bones['m']['intermediate'].next_joint,
+            #                 #'direction': bones['m']['intermediate'].direction
+            #             },
+            #             'distal': {
+            #                 'prev_joint': bones['m']['distal'].prev_joint,
+            #                 'next_joint': bones['m']['distal'].next_joint,
+            #                 #'direction': bones['m']['distal'].direction
+            #             }
+            #         }
+            #     },
+            #     'ring': {
+            #         'id': fingers_list[3].id,
+            #         'length': fingers_list[3].length,
+            #         'width': fingers_list[3].width,
+            #         'bones': {
+            #             'metacarpal': {
+            #                 'prev_joint': bones['r']['metacarpal'].prev_joint,
+            #                 'next_joint': bones['r']['metacarpal'].next_joint,
+            #                 #'direction': bones['r']['metacarpal'].direction
+            #             },
+            #             'proximal': {
+            #                 'prev_joint': bones['r']['proximal'].prev_joint,
+            #                 'next_joint': bones['r']['proximal'].next_joint,
+            #                 #'direction': bones['r']['proximal'].direction
+            #             },
+            #             'intermediate': {
+            #                 'prev_joint': bones['r']['intermediate'].prev_joint,
+            #                 'next_joint': bones['r']['intermediate'].next_joint,
+            #                 #'direction': bones['r']['intermediate'].direction
+            #             },
+            #             'distal': {
+            #                 'prev_joint': bones['r']['distal'].prev_joint,
+            #                 'next_joint': bones['r']['distal'].next_joint,
+            #                 #'direction': bones['r']['distal'].direction
+            #             }
+            #         }
+            #     },
+            #     'pinky': {
+            #         'id': fingers_list[4].id,
+            #         'length': fingers_list[4].length,
+            #         'width': fingers_list[4].width,
+            #         'bones': {
+            #             'metacarpal': {
+            #                 'prev_joint': bones['p']['metacarpal'].prev_joint,
+            #                 'next_joint': bones['p']['metacarpal'].next_joint,
+            #                 #'direction': bones['p']['metacarpal'].direction
+            #             },
+            #             'proximal': {
+            #                 'prev_joint': bones['p']['proximal'].prev_joint,
+            #                 'next_joint': bones['p']['proximal'].next_joint,
+            #                 #'direction': bones['p']['proximal'].direction
+            #             },
+            #             'intermediate': {
+            #                 'prev_joint': bones['p']['intermediate'].prev_joint,
+            #                 'next_joint': bones['p']['intermediate'].next_joint,
+            #                 #'direction': bones['p']['intermediate'].direction
+            #             },
+            #             'distal': {
+            #                 'prev_joint': bones['p']['distal'].prev_joint,
+            #                 'next_joint': bones['p']['distal'].next_joint,
+            #                 #'direction': bones['p']['distal'].direction
+            #             }
+            #         }
+            #     }
+            #
+            # },
             'arm': {
+                'width': h.arm.width,
                 'direction': [h.arm.direction.x, h.arm.direction.y, h.arm.direction.z, h.arm.direction.pitch, h.arm.direction.yaw, h.arm.direction.roll],
                 'wrist_position': [h.arm.wrist_position.x, h.arm.wrist_position.y, h.arm.wrist_position.z, h.arm.wrist_position.pitch, h.arm.wrist_position.yaw, h.arm.wrist_position.roll],
                 'elbow_position': [h.arm.elbow_position.x, h.arm.elbow_position.y, h.arm.elbow_position.z, h.arm.elbow_position.pitch, h.arm.elbow_position.yaw, h.arm.elbow_position.roll],
