@@ -15,7 +15,7 @@ import Leap
 
 class GestureListener(Leap.Listener):
     finger_names = ['Thumb', 'Index', 'Middle', 'Ring', 'Pinky']
-    bone_names = ['Metacarpal', 'Proximal', 'Intermediate', 'Distal']
+    bone_names = ['Metacarpal', 'Proximal', 'Intermediate', 'distale']
 
     gesture_name = ""
     paused = True
