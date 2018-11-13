@@ -3,6 +3,7 @@ import utils
 import cv2
 import numpy as np
 import json
+import argparse
 import time
 
 src_dir = os.path.dirname(inspect.getfile(inspect.currentframe()))
@@ -15,7 +16,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(src_dir, arch_dir)))
 
 import Leap
 
-
+SAVE_ON_DISK = False
 
 bottomLeftCornerOfText = (0, 50)
 font = cv2.FONT_HERSHEY_SIMPLEX
@@ -41,6 +42,12 @@ class Gesture:
 
 
     def record(self):
+
+        list_img_r_r = []
+        list_img_r_u = []
+        list_img_l_r = []
+        list_img_l_u = []
+        list_json = []
 
         frame_counter = 0
         print "recording"
@@ -74,35 +81,41 @@ class Gesture:
             image_l = frame.images[0]
             image_r = frame.images[1]
 
-            frame_shown = False
-
             if image_l.is_valid and image_r.is_valid:
                 if not self.maps_initialized:
                     left_coordinates, left_coefficients = utils.convert_distortion_maps(image_l)
                     right_coordinates, right_coefficients = utils.convert_distortion_maps(image_r)
                     self.maps_initialized = True
 
-
                 raw_img_l = utils.get_raw_image(image_l)
                 raw_img_r = utils.get_raw_image(image_r)
                 # undistorted images
                 undistorted_left = utils.undistort(image_l, left_coordinates, left_coefficients, 400, 400)
                 undistorted_right = utils.undistort(image_r, right_coordinates, right_coefficients, 400, 400)
+                # json
+                j_frame = utils.frame2json_struct(frame)
+                json_obj = json.dumps(j_frame, ensure_ascii=False)
 
                 cv2.imshow('img', undistorted_right)
-                # write undistorted
-                cv2.imwrite("{0}/{1}_ur.jpg".format(directory_r_u, frame_counter), undistorted_right)
-                cv2.imwrite("{0}/{1}_ul.jpg".format(directory_l_u, frame_counter), undistorted_left)
-                # write raw
-                cv2.imwrite("{0}/{1}_rr.jpg".format(directory_r_r, frame_counter), raw_img_r)
-                cv2.imwrite("{0}/{1}_rl.jpg".format(directory_l_r, frame_counter), raw_img_l)
+                if args.on_disk:
+                    # write undistorted
+                    cv2.imwrite("{0}/{1}_ur.jpg".format(directory_r_u, frame_counter), undistorted_right)
+                    cv2.imwrite("{0}/{1}_ul.jpg".format(directory_l_u, frame_counter), undistorted_left)
+                    # write raw
+                    cv2.imwrite("{0}/{1}_rr.jpg".format(directory_r_r, frame_counter), raw_img_r)
+                    cv2.imwrite("{0}/{1}_rl.jpg".format(directory_l_r, frame_counter), raw_img_l)
+                    # #scrittura file TO DO
+                    with open("{0}/{1}.json".format(directory_leap_info, frame_counter), 'w') as outfile:
+                        json.dump(json_obj, outfile)
+                else:
+                    list_img_r_r.append(raw_img_r)
+                    list_img_r_u.append(undistorted_right)
+                    list_img_l_r.append(raw_img_l)
+                    list_img_l_u.append(undistorted_left)
+                    list_json.append(json_obj)
 
 
-                # #scrittura file TO DO
-                with open("{0}/{1}.json".format(directory_leap_info, frame_counter), 'w') as outfile:
-                    j_frame = utils.frame2json_struct(frame)
-                    obj = json.dumps(j_frame, ensure_ascii=False)
-                    json.dump(obj, outfile)
+
 
                 img = np.zeros((400, 1000))
                 cv2.putText(img, "recording - press S to stop",
@@ -115,9 +128,29 @@ class Gesture:
 
                 cv2.imshow('', img)
                 frame_counter += 1
+            else:
+                print('pippo')
 
 
-        print('record ended')
+        print('record completed')
+        print('saving data...')
+        print(len(list_img_r_r), len(list_img_r_u), len(list_img_l_r), len(list_img_l_u),len(list_json))
+        # scrittura su disco
+        if not args.on_disk:
+            for i, (img_rr, img_ur, img_rl, img_ul, json_obj) in enumerate(zip(list_img_r_r, list_img_r_u, list_img_l_r,
+                                                                     list_img_l_u, list_json)):
+                cv2.imwrite("{0}/{1}_ur.jpg".format(directory_r_u, i), img_ur)
+                cv2.imwrite("{0}/{1}_rr.jpg".format(directory_r_r, i), img_rr)
+                cv2.imwrite("{0}/{1}_ul.jpg".format(directory_l_u, i), img_ul)
+                cv2.imwrite("{0}/{1}_rl.jpg".format(directory_l_r, i), img_rl)
+                with open("{0}/{1}.json".format(directory_leap_info, i), 'w') as outfile:
+                    json.dump(json_obj, outfile)
+            print('saving completed')
+
+
+
+
+
 
 
 
@@ -227,8 +260,13 @@ def run(controller):
         session_counter += 1
 
 
+def str2bool(value):
+    return value.lower == 'true'
 
 
+parser = argparse.ArgumentParser()
+parser.add_argument('--save_on_disk_frame_by_frame', dest='on_disk', default=False, type=str2bool)
+args = parser.parse_args()
 def main():
 
     controller = Leap.Controller()
