@@ -9,14 +9,10 @@ import time
 src_dir = os.path.dirname(inspect.getfile(inspect.currentframe()))
 # Windows and Linux
 arch_dir = './leap_lib'
-# Mac
-#arch_dir = os.path.abspath(os.path.join(src_dir, '../lib'))
 
 sys.path.insert(0, os.path.abspath(os.path.join(src_dir, arch_dir)))
 
 import Leap
-
-SAVE_ON_DISK = False
 
 bottomLeftCornerOfText = (0, 50)
 font = cv2.FONT_HERSHEY_SIMPLEX
@@ -26,57 +22,48 @@ lineType = 1
 
 gestures = ['pinch', 'closing_fist']
 
+
 class Gesture:
 
-    controller = 0
-    maps_initialized = False
-    gesture_dir = 0
-    gesture_id = 0
-
-    def __init__(self, gesture_id, gesture_dir, controller, id_session):
+    def __init__(self, gesture_id, gesture_dir, controller, id_session, maps_initialized=False):
         self.gesture_id = gesture_id
         self.controller = controller
         self.gesture_dir = gesture_dir
         self.session = id_session
-
-
+        self.maps_initialized = maps_initialized
 
     def record(self):
 
-        list_img_r_r = []
-        list_img_r_u = []
-        list_img_l_r = []
-        list_img_l_u = []
+        list_img_rr = []
+        list_img_ru = []
+        list_img_lr = []
+        list_img_lu = []
         list_json = []
 
         frame_counter = 0
         print "recording"
-        directory_r_r = "./data/{0}/{1}_{2}/R/raw".format(self.session, self.gesture_id, self.gesture_dir)
-        directory_l_r = "./data/{0}/{1}_{2}/L/raw".format(self.session, self.gesture_id, self.gesture_dir)
-        directory_r_u = "./data/{0}/{1}_{2}/R/undistorted".format(self.session, self.gesture_id, self.gesture_dir)
-        directory_l_u = "./data/{0}/{1}_{2}/L/undistorted".format(self.session, self.gesture_id, self.gesture_dir)
+        directory_rr = "./data/{0}/{1}_{2}/R/raw".format(self.session, self.gesture_id, self.gesture_dir)
+        directory_lr = "./data/{0}/{1}_{2}/L/raw".format(self.session, self.gesture_id, self.gesture_dir)
+        directory_ru = "./data/{0}/{1}_{2}/R/undistorted".format(self.session, self.gesture_id, self.gesture_dir)
+        directory_lu = "./data/{0}/{1}_{2}/L/undistorted".format(self.session, self.gesture_id, self.gesture_dir)
         directory_leap_info = "./data/{0}/{1}_{2}/leap_motion_json".format(self.session, self.gesture_id, self.gesture_dir)
 
-        if not os.path.exists(directory_r_r)and not os.path.exists(directory_l_r) and \
-                not os.path.exists(directory_r_u)and not os.path.exists(directory_l_u) and not os.path.exists(directory_leap_info):
-            os.makedirs(directory_r_r)
-            os.makedirs(directory_l_r)
-            os.makedirs(directory_r_u)
-            os.makedirs(directory_l_u)
+        if not os.path.exists(directory_rr)and not os.path.exists(directory_lr) and \
+                not os.path.exists(directory_lr)and not os.path.exists(directory_lu) and not os.path.exists(directory_leap_info):
+            os.makedirs(directory_rr)
+            os.makedirs(directory_lr)
+            os.makedirs(directory_ru)
+            os.makedirs(directory_lu)
             os.makedirs(directory_leap_info)
-
-            #os.chdir(directory)
         else:
-            exit(10)
+            exit(-1)
 
         while True:
-
 
             if cv2.waitKey(1) == ord('s'):
                 break
 
             frame = self.controller.frame()
-            # previous = self.controller.frame(1)
 
             image_l = frame.images[0]
             image_r = frame.images[1]
@@ -98,24 +85,18 @@ class Gesture:
 
                 cv2.imshow('img', undistorted_right)
                 if args.on_disk:
-                    # write undistorted
-                    cv2.imwrite("{0}/{1}_ur.jpg".format(directory_r_u, frame_counter), undistorted_right)
-                    cv2.imwrite("{0}/{1}_ul.jpg".format(directory_l_u, frame_counter), undistorted_left)
-                    # write raw
-                    cv2.imwrite("{0}/{1}_rr.jpg".format(directory_r_r, frame_counter), raw_img_r)
-                    cv2.imwrite("{0}/{1}_rl.jpg".format(directory_l_r, frame_counter), raw_img_l)
-                    # #scrittura file TO DO
-                    with open("{0}/{1}.json".format(directory_leap_info, frame_counter), 'w') as outfile:
-                        json.dump(json_obj, outfile)
+
+                    thr = utils.ThreadOnDisk(raw_img_r, undistorted_right, raw_img_l, undistorted_left, json_obj,
+                                             frame_counter, directory_rr, directory_ru, directory_lr, directory_lu,
+                                             directory_leap_info)
+
+                    thr.start()
                 else:
-                    list_img_r_r.append(raw_img_r)
-                    list_img_r_u.append(undistorted_right)
-                    list_img_l_r.append(raw_img_l)
-                    list_img_l_u.append(undistorted_left)
+                    list_img_rr.append(raw_img_r.copy())
+                    list_img_ru.append(undistorted_right.copy())
+                    list_img_lr.append(raw_img_l.copy())
+                    list_img_lu.append(undistorted_left.copy())
                     list_json.append(json_obj)
-
-
-
 
                 img = np.zeros((400, 1000))
                 cv2.putText(img, "recording - press S to stop",
@@ -128,30 +109,17 @@ class Gesture:
 
                 cv2.imshow('', img)
                 frame_counter += 1
-            else:
-                print('pippo')
-
 
         print('record completed')
-        print('saving data...')
-        print(len(list_img_r_r), len(list_img_r_u), len(list_img_l_r), len(list_img_l_u),len(list_json))
         # scrittura su disco
         if not args.on_disk:
-            for i, (img_rr, img_ur, img_rl, img_ul, json_obj) in enumerate(zip(list_img_r_r, list_img_r_u, list_img_l_r,
-                                                                     list_img_l_u, list_json)):
-                cv2.imwrite("{0}/{1}_ur.jpg".format(directory_r_u, i), img_ur)
-                cv2.imwrite("{0}/{1}_rr.jpg".format(directory_r_r, i), img_rr)
-                cv2.imwrite("{0}/{1}_ul.jpg".format(directory_l_u, i), img_ul)
-                cv2.imwrite("{0}/{1}_rl.jpg".format(directory_l_r, i), img_rl)
-                with open("{0}/{1}.json".format(directory_leap_info, i), 'w') as outfile:
-                    json.dump(json_obj, outfile)
-            print('saving completed')
 
-
-
-
-
-
+            # thread
+            th = utils.ThreadWriting(list_img_rr, list_img_ru, list_img_lr, list_img_lu, list_json,
+                                     directory_rr, directory_ru, directory_lr, directory_lu,
+                                     directory_leap_info)
+            th.start()
+            time.sleep(1)
 
 
 class Session:
@@ -166,13 +134,8 @@ class Session:
         self.id_session = id_session
         self.controller = controller
 
-
-
     def run_session(self):
 
-        #os.chdir(self.dir)
-
-        #ciclo di tutte le gesture - prova 2 gesture
         for i in range(0, len(gestures)):
             img = np.zeros((400, 1000))
             cv2.putText(img, "press S to start recording {0}: {1}".format(i, gestures[i]),
@@ -186,13 +149,9 @@ class Session:
             cv2.imshow('', img)
             while cv2.waitKey() != ord('s'):
                 pass
-            # while c != 's':
-            #     print "press s to start recording gesture {}".format(i)
-            #     c = raw_input()
 
             g = Gesture(i, gestures[i], self.controller, self.id_session)
             g.record()
-            #os.chdir('..')
 
         print "recording session ended"
 
@@ -256,17 +215,18 @@ def run(controller):
         sess.dir = directory
         print "session {} started".format(sess.id_session)
         sess.run_session()
-        #os.chdir('..')
         session_counter += 1
 
 
 def str2bool(value):
-    return value.lower == 'true'
+    return value.lower() == 'true'
 
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--save_on_disk_frame_by_frame', dest='on_disk', default=False, type=str2bool)
 args = parser.parse_args()
+
+
 def main():
 
     controller = Leap.Controller()
@@ -274,9 +234,9 @@ def main():
 
     if not os.path.exists("./data"):
         os.makedirs("./data")
-    #os.chdir("./data")
-    # thread.start_new_thread(start_session, ())
     run(controller)
+
 
 if __name__ == '__main__':
     main()
+
