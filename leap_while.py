@@ -20,7 +20,9 @@ fontScale = 1
 fontColor = (255, 255, 255)
 lineType = 1
 
+file_info = "session_info.json"
 gestures = ['pinch', 'closing_fist']
+
 
 
 class Gesture:
@@ -60,6 +62,7 @@ class Gesture:
 
         while True:
 
+            start = time.clock()
             if cv2.waitKey(1) == ord('s'):
                 break
 
@@ -80,8 +83,8 @@ class Gesture:
                 undistorted_left = utils.undistort(image_l, left_coordinates, left_coefficients, 400, 400)
                 undistorted_right = utils.undistort(image_r, right_coordinates, right_coefficients, 400, 400)
                 # json
-                j_frame = utils.frame2json_struct(frame)
-                json_obj = json.dumps(j_frame, ensure_ascii=False)
+                json_obj = utils.frame2json_struct(frame)
+                # json_obj = json.dumps(j_frame, ensure_ascii=False)
 
                 cv2.imshow('img', undistorted_right)
                 if args.on_disk:
@@ -109,6 +112,7 @@ class Gesture:
 
                 cv2.imshow('', img)
                 frame_counter += 1
+                print(time.clock() - start)
 
         print('record completed')
         # scrittura su disco
@@ -119,7 +123,7 @@ class Gesture:
                                      directory_rr, directory_ru, directory_lr, directory_lu,
                                      directory_leap_info)
             th.start()
-            time.sleep(1)
+            # time.sleep(1)
 
 
 class Session:
@@ -157,10 +161,20 @@ class Session:
 
 def run(controller):
 
-    session_counter = 1
+    if not os.path.exists("./data"):
+        session_counter = 0
+        session_start = 0
+        utils.save_session_info(session_id=session_counter)
+        os.makedirs("./data")
+    elif os.path.exists("./data") and not os.path.exists(file_info):
+        print("json file has to be present - check utils.save_session_info()")
+        exit()
+    else:
+        session_start = utils.load_session_info() + 1
+        session_counter = session_start
     while True:
 
-        if session_counter == 1:
+        if session_counter == session_start:
             img = np.zeros((400, 1000))
             cv2.putText(img, "press E to start new session of recording",
                         bottomLeftCornerOfText,
@@ -184,6 +198,7 @@ def run(controller):
             pass
         elif k == ord('q'):
             print "end collection"
+            utils.save_session_info(session_id=session_counter - 1)
             break
         sess = Session(id_session=session_counter, controller=controller)
 
@@ -191,26 +206,30 @@ def run(controller):
         directory = "./data/{}".format(sess.id_session)
         if not os.path.exists(directory):
             os.makedirs(directory)
-        else:
-
-            print "insert new session_id and press enter"
-            # id = raw_input()
-            img = np.zeros((400, 1000))
-            cv2.putText(img, "insert new session_id",
-                        bottomLeftCornerOfText,
-                        font,
-                        fontScale,
-                        fontColor,
-                        lineType)
-
-            cv2.imshow('', img)
-            while True:
-                sess.id_session = chr(cv2.waitKey())
-                directory = "./data/{}".format(sess.id_session)
-                session_counter = int(sess.id_session)
-                if not os.path.exists(directory):
-                    os.makedirs(directory)
-                    break
+        # else:
+        #
+        #     print "insert new session_id and press enter"
+        #     # id = raw_input()
+        #     img = np.zeros((400, 1000))
+        #     cv2.putText(img, "insert new session_id",
+        #                 bottomLeftCornerOfText,
+        #                 font,
+        #                 fontScale,
+        #                 fontColor,
+        #                 lineType)
+        #
+        #     cv2.imshow('', img)
+        #     while True:
+        #         sess.id_session = chr(cv2.waitKey())
+        #         while not sess.id_session.isnumeric():
+        #             print("insert digit")
+        #             sess.id_session = chr(cv2.waitKey())
+        #
+        #         directory = "./data/{}".format(sess.id_session)
+        #         session_counter = int(sess.id_session)
+        #         if not os.path.exists(directory):
+        #             os.makedirs(directory)
+        #             break
 
         sess.dir = directory
         print "session {} started".format(sess.id_session)
@@ -232,8 +251,6 @@ def main():
     controller = Leap.Controller()
     controller.set_policy_flags(Leap.Controller.POLICY_IMAGES)
 
-    if not os.path.exists("./data"):
-        os.makedirs("./data")
     run(controller)
 
 

@@ -52,49 +52,6 @@ class ThreadWriting(Thread):
         print('saving completed')
 
 
-class ThreadImageList(Thread):
-
-    def __init__(self, img_list, to_dir, img_type):
-        Thread.__init__(self)
-        self.img_list = img_list
-        self.to_dir = to_dir
-        self.img_type = img_type
-
-    def run(self):
-
-        print(len(self.img_list))
-        for i, img in enumerate(self.img_list):
-            try:
-                cv2.imwrite("{0}/{1}_{2}.jpg".format(self.to_dir, i, self.img_type), img)
-                # im = Image.fromarray(img)
-                # im.save("{0}\{1}_{2}.jpg".format(self.to_dir, i, self.img_type))
-                #print(i, img)
-            except IOError:
-                a = 1
-                print(a)
-        print('saving {} completed'.format(self.to_dir))
-
-
-
-class ThreadJson(Thread):
-
-    def __init__(self, json_list, to_dir):
-        Thread.__init__(self)
-        self.json_list = json_list
-        self.to_dir = to_dir
-
-    def run(self):
-
-        print(len(self.json_list))
-        for i, json_obj in enumerate(self.json_list):
-            try:
-                with open("{0}\{1}.json".format(self.to_dir, i), 'w') as outfile:
-                    json.dump(json_obj, outfile)
-            except IOError:
-                a = 1
-                print(a)
-        print('saving {} completed'.format(self.to_dir))
-
 class ThreadOnDisk(Thread):
 
     def __init__(self, img_rr, img_ru, img_lr, img_lu, json_obj, frame_counter, directory_rr,
@@ -122,6 +79,29 @@ class ThreadOnDisk(Thread):
         # #scrittura file TO DOself.
         with open("{0}/{1}.json".format(self.directory_leap_info, self.frame_counter), 'w') as outfile:
             json.dump(self.json_obj, outfile)
+
+
+file_info = "session_info.json"
+def save_session_info(session_id):
+
+    session_info = {
+        
+        'id': session_id
+    }
+
+    with open(file_info, 'w') as outfile:
+        json.dump(session_info, outfile)
+
+def load_session_info():
+
+    with open(file_info) as infile:
+        info = json.load(infile)
+
+    return info["id"]
+
+
+
+
 
 
 
@@ -213,8 +193,12 @@ def frame2json_struct(frame):
         return j_frame
 
     fingers_list = []
-    for i, finger in enumerate(h.fingers):
+    for finger in h.fingers:
         fingers_list.append(finger)
+
+    pointables_list = []
+    for pointable in h.pointables:
+        pointables_list.append(pointable)
 
     bones = {
         't': {
@@ -765,6 +749,89 @@ def frame2json_struct(frame):
                         }
                     }
                 }
+            },
+
+            'pointables': {
+                'p_0':{
+                    'tip_position': [pointables_list[0].tip_position.x, pointables_list[0].tip_position.y, pointables_list[0].tip_position.z,
+                                     pointables_list[0].tip_position.pitch, pointables_list[0].tip_position.yaw, pointables_list[0].tip_position.roll],
+                    'tip_velocity': [pointables_list[0].tip_velocity.x, pointables_list[0].tip_velocity.y, pointables_list[0].tip_velocity.z,
+                                     pointables_list[0].tip_velocity.pitch, pointables_list[0].tip_velocity.yaw, pointables_list[0].tip_velocity.roll],
+                    'direction': [pointables_list[0].direction.x, pointables_list[0].direction.y, pointables_list[0].direction.z,
+                                     pointables_list[0].direction.pitch, pointables_list[0].direction.yaw, pointables_list[0].direction.roll],
+                    'width': pointables_list[0].width,
+                    'length': pointables_list[0].length,
+                    'is_extended': pointables_list[0].is_extended
+                },
+                'p_1':{
+                    'tip_position': [pointables_list[1].tip_position.x, pointables_list[1].tip_position.y,
+                                     pointables_list[1].tip_position.z,
+                                     pointables_list[1].tip_position.pitch, pointables_list[1].tip_position.yaw,
+                                     pointables_list[1].tip_position.roll],
+                    'tip_velocity': [pointables_list[1].tip_velocity.x, pointables_list[1].tip_velocity.y,
+                                     pointables_list[1].tip_velocity.z,
+                                     pointables_list[1].tip_velocity.pitch, pointables_list[1].tip_velocity.yaw,
+                                     pointables_list[1].tip_velocity.roll],
+                    'direction': [pointables_list[1].direction.x, pointables_list[1].direction.y,
+                                  pointables_list[1].direction.z,
+                                  pointables_list[1].direction.pitch, pointables_list[1].direction.yaw,
+                                  pointables_list[1].direction.roll],
+                    'width': pointables_list[1].width,
+                    'length': pointables_list[1].length,
+                    'is_extended': pointables_list[1].is_extended
+                },
+                'p_2': {
+                    'tip_position': [pointables_list[2].tip_position.x, pointables_list[2].tip_position.y,
+                                     pointables_list[2].tip_position.z,
+                                     pointables_list[2].tip_position.pitch, pointables_list[2].tip_position.yaw,
+                                     pointables_list[2].tip_position.roll],
+                    'tip_velocity': [pointables_list[2].tip_velocity.x, pointables_list[2].tip_velocity.y,
+                                     pointables_list[2].tip_velocity.z,
+                                     pointables_list[2].tip_velocity.pitch, pointables_list[2].tip_velocity.yaw,
+                                     pointables_list[2].tip_velocity.roll],
+                    'direction': [pointables_list[2].direction.x, pointables_list[2].direction.y,
+                                  pointables_list[2].direction.z,
+                                  pointables_list[2].direction.pitch, pointables_list[2].direction.yaw,
+                                  pointables_list[2].direction.roll],
+                    'width': pointables_list[2].width,
+                    'length': pointables_list[2].length,
+                    'is_extended': pointables_list[2].is_extended
+                },
+                'p_3': {
+                    'tip_position': [pointables_list[3].tip_position.x, pointables_list[3].tip_position.y,
+                                     pointables_list[3].tip_position.z,
+                                     pointables_list[3].tip_position.pitch, pointables_list[3].tip_position.yaw,
+                                     pointables_list[3].tip_position.roll],
+                    'tip_velocity': [pointables_list[3].tip_velocity.x, pointables_list[3].tip_velocity.y,
+                                     pointables_list[3].tip_velocity.z,
+                                     pointables_list[3].tip_velocity.pitch, pointables_list[3].tip_velocity.yaw,
+                                     pointables_list[3].tip_velocity.roll],
+                    'direction': [pointables_list[3].direction.x, pointables_list[3].direction.y,
+                                  pointables_list[3].direction.z,
+                                  pointables_list[3].direction.pitch, pointables_list[3].direction.yaw,
+                                  pointables_list[3].direction.roll],
+                    'width': pointables_list[3].width,
+                    'length': pointables_list[3].length,
+                    'is_extended': pointables_list[3].is_extended
+                },
+                'p_4': {
+                    'tip_position': [pointables_list[4].tip_position.x, pointables_list[4].tip_position.y,
+                                     pointables_list[4].tip_position.z,
+                                     pointables_list[4].tip_position.pitch, pointables_list[4].tip_position.yaw,
+                                     pointables_list[4].tip_position.roll],
+                    'tip_velocity': [pointables_list[4].tip_velocity.x, pointables_list[4].tip_velocity.y,
+                                     pointables_list[4].tip_velocity.z,
+                                     pointables_list[4].tip_velocity.pitch, pointables_list[4].tip_velocity.yaw,
+                                     pointables_list[4].tip_velocity.roll],
+                    'direction': [pointables_list[4].direction.x, pointables_list[4].direction.y,
+                                  pointables_list[4].direction.z,
+                                  pointables_list[4].direction.pitch, pointables_list[4].direction.yaw,
+                                  pointables_list[4].direction.roll],
+                    'width': pointables_list[4].width,
+                    'length': pointables_list[4].length,
+                    'is_extended': pointables_list[4].is_extended
+                }
+
             },
             'arm': {
                 'width': h.arm.width,
