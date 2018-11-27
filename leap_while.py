@@ -1,4 +1,4 @@
-import os, inspect, sys, thread
+import os, inspect, sys
 import utils
 import cv2
 import numpy as np
@@ -43,7 +43,7 @@ class Gesture:
         list_json = []
 
         frame_counter = 0
-        print "recording"
+        print("recording")
         directory_rr = "./data/{0}/{1}_{2}/R/raw".format(self.session, self.gesture_id, self.gesture_dir)
         directory_lr = "./data/{0}/{1}_{2}/L/raw".format(self.session, self.gesture_id, self.gesture_dir)
         directory_ru = "./data/{0}/{1}_{2}/R/undistorted".format(self.session, self.gesture_id, self.gesture_dir)
@@ -58,6 +58,7 @@ class Gesture:
             os.makedirs(directory_lu)
             os.makedirs(directory_leap_info)
         else:
+            print("error on loading session info")
             exit(-1)
 
         while True:
@@ -82,9 +83,10 @@ class Gesture:
                 # undistorted images
                 undistorted_left = utils.undistort(image_l, left_coordinates, left_coefficients, 400, 400)
                 undistorted_right = utils.undistort(image_r, right_coordinates, right_coefficients, 400, 400)
+
                 # json
                 json_obj = utils.frame2json_struct(frame)
-                # json_obj = json.dumps(j_frame, ensure_ascii=False)
+
 
                 cv2.imshow('img', undistorted_right)
                 if args.on_disk:
@@ -120,8 +122,7 @@ class Gesture:
 
             # thread
             th = utils.ThreadWriting(list_img_rr, list_img_ru, list_img_lr, list_img_lu, list_json,
-                                     directory_rr, directory_ru, directory_lr, directory_lu,
-                                     directory_leap_info)
+                                     directory_rr, directory_ru, directory_lr, directory_lu, directory_leap_info)
             th.start()
             # time.sleep(1)
 
@@ -157,7 +158,7 @@ class Session:
             g = Gesture(i, gestures[i], self.controller, self.id_session)
             g.record()
 
-        print "recording session ended"
+        print("recording session ended")
 
 def run(controller):
 
@@ -182,7 +183,7 @@ def run(controller):
                         fontScale,
                         fontColor,
                         lineType)
-            print "press E to register new session of recording"
+            print("press E to register new session of recording")
         else:
             img = np.zeros((400, 1000))
             cv2.putText(img, "press E to start new session of recording or Q to quit",
@@ -191,13 +192,13 @@ def run(controller):
                         fontScale,
                         fontColor,
                         lineType)
-            print "press E to start new session of recording or Q to quit"
+            print("press E to start new session of recording or Q to quit")
         cv2.imshow('', img)
         k = cv2.waitKey()
         if k == ord('e'):
             pass
         elif k == ord('q'):
-            print "end collection"
+            print("end collection")
             utils.save_session_info(session_id=session_counter - 1)
             break
         sess = Session(id_session=session_counter, controller=controller)
@@ -232,7 +233,7 @@ def run(controller):
         #             break
 
         sess.dir = directory
-        print "session {} started".format(sess.id_session)
+        print("session {} started".format(sess.id_session))
         sess.run_session()
         session_counter += 1
 

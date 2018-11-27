@@ -4,8 +4,8 @@ import ctypes
 import os, inspect, sys
 from threading import Thread
 import json
-import scipy.misc
-from PIL import Image
+# import scipy.misc
+# from PIL import Image
 
 src_dir = os.path.dirname(inspect.getfile(inspect.currentframe()))
 # Windows and Linux
@@ -20,7 +20,10 @@ import Leap
 
 class ThreadWriting(Thread):
 
-    def __init__(self, list_rr, list_ru, list_lr, list_lu, list_json_obj, dir_rr, dir_ru, dir_lr, dir_lu, dir_leap_info):
+    def __init__(self, list_rr, list_ru, list_lr, list_lu, list_json_obj,
+                 dir_rr, dir_ru, dir_lr, dir_lu,
+                 dir_leap_info
+                 ):
 
         Thread.__init__(self)
         self.list_img_rr = list_rr
@@ -36,7 +39,9 @@ class ThreadWriting(Thread):
 
     def run(self):
         print('saving data...')
-        print(len(self.list_img_rr), len(self.list_img_ru), len(self.list_img_lr), len(self.list_img_lu), len(self.list_json))
+        print(len(self.list_img_rr), len(self.list_img_ru), len(self.list_img_lr), len(self.list_img_lu),
+              len(self.list_json))
+
         for i, (img_rr, img_ru, img_lr, img_lu, json_obj) in enumerate(zip(self.list_img_rr,
                                                                            self.list_img_ru,
                                                                            self.list_img_lr,
@@ -49,12 +54,14 @@ class ThreadWriting(Thread):
             cv2.imwrite("{0}/{1}_rl.jpg".format(self.directory_lr, i), img_lr)
             with open("{0}/{1}.json".format(self.directory_leap_info, i), 'w') as outfile:
                 json.dump(json_obj, outfile)
+
         print('saving completed')
 
 
 class ThreadOnDisk(Thread):
 
-    def __init__(self, img_rr, img_ru, img_lr, img_lu, json_obj, frame_counter, directory_rr,
+    def __init__(self, img_rr, img_ru, img_lr, img_lu, json_obj,
+                 frame_counter, directory_rr,
                  directory_ru, directory_lr, directory_lu, directory_leap_info):
 
         Thread.__init__(self)
@@ -73,10 +80,10 @@ class ThreadOnDisk(Thread):
     def run(self):
         cv2.imwrite("{0}/{1}_ru.jpg".format(self.directory_ru, self.frame_counter), self.img_ru)
         cv2.imwrite("{0}/{1}_lu.jpg".format(self.directory_lu, self.frame_counter), self.img_lu)
-        # write rawself.self.
+        # write raw
         cv2.imwrite("{0}/{1}_rr.jpg".format(self.directory_rr, self.frame_counter), self.img_rr)
         cv2.imwrite("{0}/{1}_lr.jpg".format(self.directory_lr, self.frame_counter), self.img_lr)
-        # #scrittura file TO DOself.
+        #
         with open("{0}/{1}.json".format(self.directory_leap_info, self.frame_counter), 'w') as outfile:
             json.dump(self.json_obj, outfile)
 
@@ -108,15 +115,15 @@ def load_session_info():
 def convert_distortion_maps(image):
 
     distortion_length = image.distortion_width * image.distortion_height
-    xmap = np.zeros(distortion_length/2, dtype=np.float32)
-    ymap = np.zeros(distortion_length/2, dtype=np.float32)
+    xmap = np.zeros(distortion_length//2, dtype=np.float32)
+    ymap = np.zeros(distortion_length//2, dtype=np.float32)
 
     for i in range(0, distortion_length, 2):
-        xmap[distortion_length/2 - i/2 - 1] = image.distortion[i] * image.width
-        ymap[distortion_length/2 - i/2 - 1] = image.distortion[i + 1] * image.height
+        xmap[distortion_length//2 - i//2 - 1] = image.distortion[i] * image.width
+        ymap[distortion_length//2 - i//2 - 1] = image.distortion[i + 1] * image.height
 
-    xmap = np.reshape(xmap, (image.distortion_height, image.distortion_width/2))
-    ymap = np.reshape(ymap, (image.distortion_height, image.distortion_width/2))
+    xmap = np.reshape(xmap, (image.distortion_height, image.distortion_width//2))
+    ymap = np.reshape(ymap, (image.distortion_height, image.distortion_width//2))
 
     #resize the distortion map to equal desired destination image size
     resized_xmap = cv2.resize(xmap,
@@ -184,21 +191,23 @@ def frame2json_struct(frame):
         j_frame['frame'] = 'invalid'
 
     h = None
-    for hand in frame.hands:
-        if hand.is_right and hand.is_valid:
-            h = hand
+    hand = frame.hands[0]
+    if hand.is_right and hand.is_valid:
+        h = hand
 
     if h is None:
         j_frame['frame'] = 'invalid'
         return j_frame
 
     fingers_list = []
-    for finger in h.fingers:
-        fingers_list.append(finger)
+    for i in range(5):
+        # fin = h.fingers
+        # print(fin)
+        fingers_list.append(h.fingers[i])
 
     pointables_list = []
-    for pointable in h.pointables:
-        pointables_list.append(pointable)
+    for i in range(5):
+        pointables_list.append(h.pointables[i])
 
     bones = {
         't': {
