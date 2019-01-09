@@ -20,9 +20,8 @@ import Leap
 
 class ThreadWriting(Thread):
 
-    def __init__(self, list_rr, list_ru, list_lr, list_lu, list_json_obj,
-                 dir_rr, dir_ru, dir_lr, dir_lu,
-                 dir_leap_info
+    def __init__(self, list_rr, list_ru, list_lr, list_lu, list_json_obj, list_img_rgb,
+                 dir_rr, dir_ru, dir_lr, dir_lu, dir_leap_info, dir_rgb
                  ):
 
         Thread.__init__(self)
@@ -30,28 +29,32 @@ class ThreadWriting(Thread):
         self.list_img_ru = list_ru
         self.list_img_lr = list_lr
         self.list_img_lu = list_lu
+        self.list_img_rgb = list_img_rgb
         self.list_json = list_json_obj
         self.directory_ru = dir_ru
         self.directory_rr = dir_rr
         self.directory_lu = dir_lu
         self.directory_lr = dir_lr
         self.directory_leap_info = dir_leap_info
+        self.directory_rgb = dir_rgb
 
     def run(self):
         print('saving data...')
-        print(len(self.list_img_rr), len(self.list_img_ru), len(self.list_img_lr), len(self.list_img_lu),
-              len(self.list_json))
+        # print(len(self.list_img_rr), len(self.list_img_ru), len(self.list_img_lr), len(self.list_img_lu),
+        #       len(self.list_json))
 
-        for i, (img_rr, img_ru, img_lr, img_lu, json_obj) in enumerate(zip(self.list_img_rr,
+        for i, (img_rr, img_ru, img_lr, img_lu, json_obj, img_rgb) in enumerate(zip(self.list_img_rr,
                                                                            self.list_img_ru,
                                                                            self.list_img_lr,
                                                                            self.list_img_lu,
-                                                                           self.list_json)):
+                                                                           self.list_json,
+                                                                           self.list_img_rgb)):
 
             cv2.imwrite("{0}/{1}_r.jpg".format(self.directory_ru, i), img_ru)
             cv2.imwrite("{0}/{1}_rr.jpg".format(self.directory_rr, i), img_rr)
             cv2.imwrite("{0}/{1}_ul.jpg".format(self.directory_lu, i), img_lu)
             cv2.imwrite("{0}/{1}_rl.jpg".format(self.directory_lr, i), img_lr)
+            cv2.imwrite("{0}/{1}_rgb.jpg".format(self.directory_rgb, i), img_rgb)
             with open("{0}/{1}.json".format(self.directory_leap_info, i), 'w') as outfile:
                 json.dump(json_obj, outfile)
 
@@ -60,9 +63,9 @@ class ThreadWriting(Thread):
 
 class ThreadOnDisk(Thread):
 
-    def __init__(self, img_rr, img_ru, img_lr, img_lu, json_obj,
+    def __init__(self, img_rr, img_ru, img_lr, img_lu, json_obj, img_rgb,
                  frame_counter, directory_rr,
-                 directory_ru, directory_lr, directory_lu, directory_leap_info):
+                 directory_ru, directory_lr, directory_lu, directory_leap_info, directory_rgb):
 
         Thread.__init__(self)
         self.img_rr = img_rr
@@ -70,12 +73,14 @@ class ThreadOnDisk(Thread):
         self.img_lr = img_lr
         self.img_lu = img_lu
         self.json_obj = json_obj
+        self.img_rgb = img_rgb
         self.frame_counter = frame_counter
         self.directory_rr = directory_rr
         self.directory_ru = directory_ru
         self.directory_lr = directory_lr
         self.directory_lu = directory_lu
         self.directory_leap_info = directory_leap_info
+        self.directory_rgb = directory_rgb
 
     def run(self):
         cv2.imwrite("{0}/{1}_ru.jpg".format(self.directory_ru, self.frame_counter), self.img_ru)
@@ -83,6 +88,8 @@ class ThreadOnDisk(Thread):
         # write raw
         cv2.imwrite("{0}/{1}_rr.jpg".format(self.directory_rr, self.frame_counter), self.img_rr)
         cv2.imwrite("{0}/{1}_lr.jpg".format(self.directory_lr, self.frame_counter), self.img_lr)
+        # write rgb
+        cv2.imwrite("{0}/{1}_rgb.jpg".format(self.directory_rgb, self.frame_counter), self.img_rgb)
         #
         with open("{0}/{1}.json".format(self.directory_leap_info, self.frame_counter), 'w') as outfile:
             json.dump(self.json_obj, outfile)
@@ -178,6 +185,12 @@ def get_raw_image(image):
     return as_numpy_array
 
 
+# function needed to validate the start of recording (OPTIONAL)
+def hand_is_valid(frame):
+
+    hand = frame.hands[0]
+    return hand.is_right and hand.is_valid
+
 
 #TODO
 #right hand from frame.hands
@@ -200,13 +213,13 @@ def frame2json_struct(frame):
         return j_frame
 
     fingers_list = []
-    for i in range(5):
+    for i in range(len(h.fingers)):
         # fin = h.fingers
         # print(fin)
         fingers_list.append(h.fingers[i])
 
     pointables_list = []
-    for i in range(5):
+    for i in range(len(h.pointables)):
         pointables_list.append(h.pointables[i])
 
     bones = {

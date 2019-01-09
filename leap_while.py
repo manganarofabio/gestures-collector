@@ -20,9 +20,10 @@ fontScale = 1
 fontColor = (255, 255, 255)
 lineType = 1
 
+DIM_RGB_IMAGE = (400, 400)
+
 file_info = "session_info.json"
 gestures = ['pinch', 'closing_fist']
-
 
 
 class Gesture:
@@ -33,6 +34,27 @@ class Gesture:
         self.gesture_dir = gesture_dir
         self.session = id_session
         self.maps_initialized = maps_initialized
+        # directories
+        self.directory_rr = "./data/{0}/{1}_{2}/R/raw".format(self.session, self.gesture_id, self.gesture_dir)
+        self.directory_lr = "./data/{0}/{1}_{2}/L/raw".format(self.session, self.gesture_id, self.gesture_dir)
+        self.directory_ru = "./data/{0}/{1}_{2}/R/undistorted".format(self.session, self.gesture_id, self.gesture_dir)
+        self.directory_lu = "./data/{0}/{1}_{2}/L/undistorted".format(self.session, self.gesture_id, self.gesture_dir)
+        self.directory_leap_info = "./data/{0}/{1}_{2}/leap_motion_json".format(self.session, self.gesture_id,
+                                                                           self.gesture_dir)
+        self.directory_rgb = "./data/{0}/{1}_{2}/rgb".format(self.session, self.gesture_id, self.gesture_dir)
+
+        if not os.path.exists(self.directory_rr)and not os.path.exists(self.directory_lr) and \
+                not os.path.exists(self.directory_lr)and not os.path.exists(self.directory_lu) \
+                and not os.path.exists(self.directory_leap_info) and not os.path.exists(self.directory_rgb):
+            os.makedirs(self.directory_rr)
+            os.makedirs(self.directory_lr)
+            os.makedirs(self.directory_ru)
+            os.makedirs(self.directory_lu)
+            os.makedirs(self.directory_leap_info)
+            os.makedirs(self.directory_rgb)
+        else:
+            print("error on loading session info")
+            exit(-1)
 
     def record(self):
 
@@ -41,88 +63,121 @@ class Gesture:
         list_img_lr = []
         list_img_lu = []
         list_json = []
+        list_img_rgb = []
 
+
+        # directory_rr = "./data/{0}/{1}_{2}/R/raw".format(self.session, self.gesture_id, self.gesture_dir)
+        # directory_lr = "./data/{0}/{1}_{2}/L/raw".format(self.session, self.gesture_id, self.gesture_dir)
+        # directory_ru = "./data/{0}/{1}_{2}/R/undistorted".format(self.session, self.gesture_id, self.gesture_dir)
+        # directory_lu = "./data/{0}/{1}_{2}/L/undistorted".format(self.session, self.gesture_id, self.gesture_dir)
+        # directory_leap_info = "./data/{0}/{1}_{2}/leap_motion_json".format(self.session, self.gesture_id, self.gesture_dir)
+
+        # if not os.path.exists(directory_rr)and not os.path.exists(directory_lr) and \
+        #         not os.path.exists(directory_lr)and not os.path.exists(directory_lu) and not os.path.exists(directory_leap_info):
+        #     os.makedirs(directory_rr)
+        #     os.makedirs(directory_lr)
+        #     os.makedirs(directory_ru)
+        #     os.makedirs(directory_lu)
+        #     os.makedirs(directory_leap_info)
+        # else:
+        #     print("error on loading session info")
+        #     exit(-1)
+
+        record_if_valid = False
         frame_counter = 0
         print("recording")
-        directory_rr = "./data/{0}/{1}_{2}/R/raw".format(self.session, self.gesture_id, self.gesture_dir)
-        directory_lr = "./data/{0}/{1}_{2}/L/raw".format(self.session, self.gesture_id, self.gesture_dir)
-        directory_ru = "./data/{0}/{1}_{2}/R/undistorted".format(self.session, self.gesture_id, self.gesture_dir)
-        directory_lu = "./data/{0}/{1}_{2}/L/undistorted".format(self.session, self.gesture_id, self.gesture_dir)
-        directory_leap_info = "./data/{0}/{1}_{2}/leap_motion_json".format(self.session, self.gesture_id, self.gesture_dir)
-
-        if not os.path.exists(directory_rr)and not os.path.exists(directory_lr) and \
-                not os.path.exists(directory_lr)and not os.path.exists(directory_lu) and not os.path.exists(directory_leap_info):
-            os.makedirs(directory_rr)
-            os.makedirs(directory_lr)
-            os.makedirs(directory_ru)
-            os.makedirs(directory_lu)
-            os.makedirs(directory_leap_info)
-        else:
-            print("error on loading session info")
-            exit(-1)
+        # open rgb camera
+        cap = cv2.VideoCapture(1)
 
         while True:
 
-            start = time.clock()
+            # start = time.clock()
             if cv2.waitKey(1) == ord('s'):
                 break
 
             frame = self.controller.frame()
 
-            image_l = frame.images[0]
-            image_r = frame.images[1]
+            # controllo di validità per inizio registrazione (OPZIONALE)
+            # inizia a registrare i frame solo se leap motion rileva correttamente la mano
+            if utils.hand_is_valid(frame) and not record_if_valid:
+                print('check ok')
+                record_if_valid = True
 
-            if image_l.is_valid and image_r.is_valid:
-                if not self.maps_initialized:
-                    left_coordinates, left_coefficients = utils.convert_distortion_maps(image_l)
-                    right_coordinates, right_coefficients = utils.convert_distortion_maps(image_r)
-                    self.maps_initialized = True
+            if record_if_valid:
 
-                raw_img_l = utils.get_raw_image(image_l)
-                raw_img_r = utils.get_raw_image(image_r)
-                # undistorted images
-                undistorted_left = utils.undistort(image_l, left_coordinates, left_coefficients, 400, 400)
-                undistorted_right = utils.undistort(image_r, right_coordinates, right_coefficients, 400, 400)
+                # print('hand is valid')
+                image_l = frame.images[0]
+                image_r = frame.images[1]
 
-                # json
-                json_obj = utils.frame2json_struct(frame)
+                if image_l.is_valid and image_r.is_valid:
+                    if not self.maps_initialized:
+                        left_coordinates, left_coefficients = utils.convert_distortion_maps(image_l)
+                        right_coordinates, right_coefficients = utils.convert_distortion_maps(image_r)
+                        self.maps_initialized = True
+
+                    raw_img_l = utils.get_raw_image(image_l)
+                    raw_img_r = utils.get_raw_image(image_r)
+                    # undistorted images
+                    undistorted_left = utils.undistort(image_l, left_coordinates, left_coefficients, 400, 400)
+                    undistorted_right = utils.undistort(image_r, right_coordinates, right_coefficients, 400, 400)
+
+                    # json
+                    json_obj = utils.frame2json_struct(frame)
+
+                    # get rgb image
+                    ret, img_rgb = cap.read()
+                    # resize dim img rgb
+                    img_rgb = cv2.resize(img_rgb, DIM_RGB_IMAGE)
+
+                    # cv2.imshow('rgb', img_rgb)
+                    cv2.imshow('img', undistorted_right)
+
+                    if args.on_disk:
+
+                        thr = utils.ThreadOnDisk(raw_img_r, undistorted_right, raw_img_l, undistorted_left, json_obj,
+                                                 img_rgb, frame_counter, self.directory_rr, self.directory_ru,
+                                                 self.directory_lr,
+                                                 self.directory_lu,
+                                                 self.directory_leap_info,
+                                                 self.directory_rgb)
+
+                        thr.start()
+                    else:
+                        list_img_rr.append(raw_img_r.copy())
+                        list_img_ru.append(undistorted_right.copy())
+                        list_img_lr.append(raw_img_l.copy())
+                        list_img_lu.append(undistorted_left.copy())
+                        list_img_rgb.append(img_rgb.copy())
+                        list_json.append(json_obj)
 
 
-                cv2.imshow('img', undistorted_right)
-                if args.on_disk:
+                    img = np.zeros((400, 1000))
+                    cv2.putText(img, "recording - press S to stop",
+                                bottomLeftCornerOfText,
+                                font,
+                                fontScale,
+                                fontColor,
+                                lineType)
+                    cv2.circle(img, (700, 100), 50, color=(255, 0, 0), thickness=-1)
 
-                    thr = utils.ThreadOnDisk(raw_img_r, undistorted_right, raw_img_l, undistorted_left, json_obj,
-                                             frame_counter, directory_rr, directory_ru, directory_lr, directory_lu,
-                                             directory_leap_info)
-
-                    thr.start()
+                    cv2.imshow('', img)
+                    frame_counter += 1
+                    # print(time.clock() - start)
                 else:
-                    list_img_rr.append(raw_img_r.copy())
-                    list_img_ru.append(undistorted_right.copy())
-                    list_img_lr.append(raw_img_l.copy())
-                    list_img_lu.append(undistorted_left.copy())
-                    list_json.append(json_obj)
+                    print('hand not valid')
 
-                img = np.zeros((400, 1000))
-                cv2.putText(img, "recording - press S to stop",
-                            bottomLeftCornerOfText,
-                            font,
-                            fontScale,
-                            fontColor,
-                            lineType)
-                cv2.circle(img, (700, 100), 50, color=(255, 0, 0), thickness=-1)
-
-                cv2.imshow('', img)
-                frame_counter += 1
-                print(time.clock() - start)
+        # release rgb camera
+        cap.release()
 
         print('record completed')
+        record_if_valid = False
         # scrittura su disco
         if not args.on_disk:
 
             # thread
-            th = utils.ThreadWriting(list_img_rr, list_img_ru, list_img_lr, list_img_lu, list_json,
-                                     directory_rr, directory_ru, directory_lr, directory_lu, directory_leap_info)
+            th = utils.ThreadWriting(list_img_rr, list_img_ru, list_img_lr, list_img_lu, list_json, list_img_rgb,
+                                     self.directory_rr, self.directory_ru, self.directory_lr, self.directory_lu,
+                                     self.directory_leap_info, self.directory_rgb)
             th.start()
             # time.sleep(1)
 
