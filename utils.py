@@ -2,8 +2,11 @@ import numpy as np
 import cv2
 import ctypes
 import os, inspect, sys
-from threading import Thread
+# from threading import Thread
+from multiprocessing import Process as Thread
 import json
+# import queue
+import multiprocessing.queues as queue
 # import scipy.misc
 # from PIL import Image
 
@@ -17,12 +20,36 @@ sys.path.insert(0, os.path.abspath(os.path.join(src_dir, arch_dir)))
 
 import Leap
 
+def draw_ui(text, circle=False, thickness=1):
 
-class ThreadWriting(Thread):
+    bottomLeftCornerOfText = (0, 50)
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    fontScale = 1
+    fontColor = (255, 255, 255)
+    lineType = 1
+
+    img = np.zeros((400, 1000))
+    cv2.putText(img, text,
+                bottomLeftCornerOfText,
+                font,
+                fontScale,
+                fontColor,
+                lineType)
+    if circle:
+        cv2.circle(img, (700, 100), 50, color=(255, 0, 0), thickness=thickness)
+
+    cv2.imshow('', img)
+
+
+
+#############################
+#        SAVING THREADS     #
+#############################
+
+class ThreadWritingGesture(Thread):
 
     def __init__(self, list_rr, list_ru, list_lr, list_lu, list_json_obj, list_img_rgb,
-                 dir_rr, dir_ru, dir_lr, dir_lu, dir_leap_info, dir_rgb
-                 ):
+                 list_img_z, list_img_ir, dir_rr, dir_ru, dir_lr, dir_lu, dir_leap_info, dir_rgb, dir_z, dir_ir):
 
         Thread.__init__(self)
         self.list_img_rr = list_rr
@@ -30,6 +57,8 @@ class ThreadWriting(Thread):
         self.list_img_lr = list_lr
         self.list_img_lu = list_lu
         self.list_img_rgb = list_img_rgb
+        self.list_img_z = list_img_z
+        self.list_img_ir = list_img_ir
         self.list_json = list_json_obj
         self.directory_ru = dir_ru
         self.directory_rr = dir_rr
@@ -37,35 +66,52 @@ class ThreadWriting(Thread):
         self.directory_lr = dir_lr
         self.directory_leap_info = dir_leap_info
         self.directory_rgb = dir_rgb
+        self.directory_z = dir_z
+        self.directory_ir = dir_ir
 
     def run(self):
         print('saving data...')
         # print(len(self.list_img_rr), len(self.list_img_ru), len(self.list_img_lr), len(self.list_img_lu),
         #       len(self.list_json))
 
-        for i, (img_rr, img_ru, img_lr, img_lu, json_obj, img_rgb) in enumerate(zip(self.list_img_rr,
-                                                                           self.list_img_ru,
-                                                                           self.list_img_lr,
-                                                                           self.list_img_lu,
-                                                                           self.list_json,
-                                                                           self.list_img_rgb)):
+        for i, (img_rr, img_ru, img_lr, img_lu, json_obj, img_rgb, img_z, img_ir) in enumerate(zip(self.list_img_rr,
+                                                                                    self.list_img_ru,
+                                                                                    self.list_img_lr,
+                                                                                    self.list_img_lu,
+                                                                                    self.list_json,
+                                                                                    self.list_img_rgb,
+                                                                                    self.list_img_z,
+                                                                                    self.list_img_ir)):
 
-            cv2.imwrite("{0}/{1}_r.jpg".format(self.directory_ru, i), img_ru)
-            cv2.imwrite("{0}/{1}_rr.jpg".format(self.directory_rr, i), img_rr)
-            cv2.imwrite("{0}/{1}_ul.jpg".format(self.directory_lu, i), img_lu)
-            cv2.imwrite("{0}/{1}_rl.jpg".format(self.directory_lr, i), img_lr)
-            cv2.imwrite("{0}/{1}_rgb.jpg".format(self.directory_rgb, i), img_rgb)
-            with open("{0}/{1}.json".format(self.directory_leap_info, i), 'w') as outfile:
-                json.dump(json_obj, outfile)
+            if img_ru is not None:
+                cv2.imwrite("{0}/{1}_r.png".format(self.directory_ru, i), img_ru)
+            if img_rr is not None:
+                cv2.imwrite("{0}/{1}_rr.png".format(self.directory_rr, i), img_rr)
+            if img_lu is not None:
+                cv2.imwrite("{0}/{1}_ul.png".format(self.directory_lu, i), img_lu)
+            if img_lr is not None:
+                cv2.imwrite("{0}/{1}_rl.png".format(self.directory_lr, i), img_lr)
+            if img_rgb is not None:
+                cv2.imwrite("{0}/{1}_rgb.png".format(self.directory_rgb, i), img_rgb)
+            if img_z is not None:
+                np.savetxt("{0}/{1}_z.gz".format(self.directory_z, i), img_z)
+            if img_ir is not None:
+                cv2.imwrite("{0}/{1}_ir.png".format(self.directory_ir, i), img_ir)
+
+            # print('ok')
+            if json_obj is not None:
+                with open("{0}/{1}.json".format(self.directory_leap_info, i), 'w') as outfile:
+                    json.dump(json_obj, outfile)
 
         print('saving completed')
 
 
 class ThreadOnDisk(Thread):
 
-    def __init__(self, img_rr, img_ru, img_lr, img_lu, json_obj, img_rgb,
+    def __init__(self, img_rr, img_ru, img_lr, img_lu, json_obj, img_rgb, img_z, img_ir,
                  frame_counter, directory_rr,
-                 directory_ru, directory_lr, directory_lu, directory_leap_info, directory_rgb):
+                 directory_ru, directory_lr, directory_lu, directory_leap_info, directory_rgb, directory_z,
+                 directory_ir):
 
         Thread.__init__(self)
         self.img_rr = img_rr
@@ -74,6 +120,8 @@ class ThreadOnDisk(Thread):
         self.img_lu = img_lu
         self.json_obj = json_obj
         self.img_rgb = img_rgb
+        self.img_z = img_z
+        self.img_ir = img_ir
         self.frame_counter = frame_counter
         self.directory_rr = directory_rr
         self.directory_ru = directory_ru
@@ -81,21 +129,33 @@ class ThreadOnDisk(Thread):
         self.directory_lu = directory_lu
         self.directory_leap_info = directory_leap_info
         self.directory_rgb = directory_rgb
+        self.directory_z = directory_z
+        self.directory_ir = directory_ir
 
     def run(self):
-        cv2.imwrite("{0}/{1}_ru.jpg".format(self.directory_ru, self.frame_counter), self.img_ru)
-        cv2.imwrite("{0}/{1}_lu.jpg".format(self.directory_lu, self.frame_counter), self.img_lu)
+        cv2.imwrite("{0}/{1}_ru.png".format(self.directory_ru, self.frame_counter), self.img_ru)
+        cv2.imwrite("{0}/{1}_lu.png".format(self.directory_lu, self.frame_counter), self.img_lu)
         # write raw
-        cv2.imwrite("{0}/{1}_rr.jpg".format(self.directory_rr, self.frame_counter), self.img_rr)
-        cv2.imwrite("{0}/{1}_lr.jpg".format(self.directory_lr, self.frame_counter), self.img_lr)
+        cv2.imwrite("{0}/{1}_rr.png".format(self.directory_rr, self.frame_counter), self.img_rr)
+        cv2.imwrite("{0}/{1}_lr.png".format(self.directory_lr, self.frame_counter), self.img_lr)
         # write rgb
-        cv2.imwrite("{0}/{1}_rgb.jpg".format(self.directory_rgb, self.frame_counter), self.img_rgb)
+        cv2.imwrite("{0}/{1}_rgb.png".format(self.directory_rgb, self.frame_counter), self.img_rgb)
+        # depth
+        np.savetxt("{0}/{1}_z.gz".format(self.directory_z, self.frame_counter), self.img_z)
+        cv2.imwrite("{0}/{1}_ir.png".format(self.directory_ir, self.frame_counter), self.img_ir)
+
         #
         with open("{0}/{1}.json".format(self.directory_leap_info, self.frame_counter), 'w') as outfile:
             json.dump(self.json_obj, outfile)
 
+#############################
+#        SESSION INFO       #
+#############################
+
 
 file_info = "session_info.json"
+
+
 def save_session_info(session_id):
 
     session_info = {
@@ -106,6 +166,7 @@ def save_session_info(session_id):
     with open(file_info, 'w') as outfile:
         json.dump(session_info, outfile)
 
+
 def load_session_info():
 
     with open(file_info) as infile:
@@ -113,10 +174,41 @@ def load_session_info():
 
     return info["id"]
 
+#############################
+#         PICOFLEXX         #
+#############################
 
 
+def process_event_queue(q):
+    # create a loop that will run for the given amount of time
+
+    try:
+            # try to retrieve an item from the queue.
+            # this will block until an item can be retrieved
+           # or the timeout of 1 second is hit
+        item = q.get(True)
+    except queue.Empty:
+        # this will be thrown when the timeout is hit
+        print("error in queue")
+        return None
+    else:
+        return item
 
 
+def get_images_from_picoflexx(queue):
+
+    item = process_event_queue(queue)
+
+    z = item[0]
+    g = item[1]
+    g = g.astype(np.uint16)
+    g = cv2.normalize(g, dst=None, alpha=0, beta=65535, norm_type=cv2.NORM_MINMAX)
+
+    return z, g
+
+#############################
+#    LEAP MOTION IMAGES     #
+#############################
 
 
 def convert_distortion_maps(image):
@@ -151,7 +243,6 @@ def convert_distortion_maps(image):
     return coordinate_map, interpolation_coefficients
 
 
-
 def undistort(image, coordinate_map, coefficient_map, width, height):
     destination = np.empty((width, height), dtype=np.ubyte)
 
@@ -177,6 +268,7 @@ def undistort(image, coordinate_map, coefficient_map, width, height):
                              cv2.INTER_LINEAR)
     return destination
 
+
 def get_raw_image(image):
     image_buffer_ptr = image.data_pointer
     ctype_array_def = ctypes.c_ubyte * image.width * image.height
@@ -191,8 +283,10 @@ def hand_is_valid(frame):
     hand = frame.hands[0]
     return hand.is_right and hand.is_valid
 
+#############################
+#         LEAP MOTION       #
+#############################
 
-#TODO
 #right hand from frame.hands
 def frame2json_struct(frame):
 
