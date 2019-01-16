@@ -41,17 +41,69 @@ def draw_ui(text, circle=False, thickness=1):
     cv2.imshow('', img)
 
 
-
 #############################
 #        SAVING THREADS     #
 #############################
 
+
+class GestureData:
+
+    def __init__(self, id_gesture, list_rr, list_ru, list_lr, list_lu, list_json_obj, list_img_rgb,
+                 list_img_z, list_img_ir, dir_rr, dir_ru, dir_lr, dir_lu, dir_leap_info, dir_rgb, dir_z, dir_ir):
+
+        self.id_gesture = id_gesture
+        self.list_img_rr = list_rr
+        self.list_img_ru = list_ru
+        self.list_img_lr = list_lr
+        self.list_img_lu = list_lu
+        self.list_img_rgb = list_img_rgb
+        self.list_img_z = list_img_z
+        self.list_img_ir = list_img_ir
+        self.list_json = list_json_obj
+        self.directory_ru = dir_ru
+        self.directory_rr = dir_rr
+        self.directory_lu = dir_lu
+        self.directory_lr = dir_lr
+        self.directory_leap_info = dir_leap_info
+        self.directory_rgb = dir_rgb
+        self.directory_z = dir_z
+        self.directory_ir = dir_ir
+
+        if not os.path.exists(self.directory_rr)and not os.path.exists(self.directory_lr) and \
+                not os.path.exists(self.directory_lr) and not os.path.exists(self.directory_lu) \
+                and not os.path.exists(self.directory_leap_info) and not os.path.exists(self.directory_rgb) \
+                and not os.path.exists(self.directory_z) and not os.path.exists(self.directory_ir):
+            os.makedirs(self.directory_rr)
+            os.makedirs(self.directory_lr)
+            os.makedirs(self.directory_ru)
+            os.makedirs(self.directory_lu)
+            os.makedirs(self.directory_leap_info)
+            os.makedirs(self.directory_rgb)
+            os.makedirs(self.directory_z)
+            os.makedirs(self.directory_ir)
+
+        else:
+            print("error on loading session info")
+            exit(-1)
+
+    def saveGestureData(self):
+
+        th = ThreadWritingGesture(self.id_gesture, self.list_img_rr, self.list_img_ru, self.list_img_lr, self.list_img_lu, self.list_json,
+                                  self.list_img_rgb, self.list_img_z, self.list_img_ir, self.directory_rr,
+                                  self.directory_ru, self.directory_lr, self.directory_lu, self.directory_leap_info,
+                                  self.directory_rgb, self.directory_z, self.directory_ir)
+
+        th.start()
+        return th
+
+
 class ThreadWritingGesture(Thread):
 
-    def __init__(self, list_rr, list_ru, list_lr, list_lu, list_json_obj, list_img_rgb,
+    def __init__(self, id_gesture, list_rr, list_ru, list_lr, list_lu, list_json_obj, list_img_rgb,
                  list_img_z, list_img_ir, dir_rr, dir_ru, dir_lr, dir_lu, dir_leap_info, dir_rgb, dir_z, dir_ir):
 
         Thread.__init__(self)
+        self.id_gesture = id_gesture
         self.list_img_rr = list_rr
         self.list_img_ru = list_ru
         self.list_img_lr = list_lr
@@ -70,9 +122,11 @@ class ThreadWritingGesture(Thread):
         self.directory_ir = dir_ir
 
     def run(self):
-        print('saving data...')
+        print("saving gesture {}".format(self.id_gesture))
         # print(len(self.list_img_rr), len(self.list_img_ru), len(self.list_img_lr), len(self.list_img_lu),
         #       len(self.list_json))
+
+        # cut list img
 
         for i, (img_rr, img_ru, img_lr, img_lu, json_obj, img_rgb, img_z, img_ir) in enumerate(zip(self.list_img_rr,
                                                                                     self.list_img_ru,
@@ -103,7 +157,7 @@ class ThreadWritingGesture(Thread):
                 with open("{0}/{1}.json".format(self.directory_leap_info, i), 'w') as outfile:
                     json.dump(json_obj, outfile)
 
-        print('saving completed')
+        print('saving gesture {} completed'.format(self.id_gesture))
 
 
 class ThreadOnDisk(Thread):
@@ -350,7 +404,6 @@ def frame2json_struct(frame):
     }
 
     # costruzione json
-
 
     j_frame['frame'] = {
         'id': f.id,
