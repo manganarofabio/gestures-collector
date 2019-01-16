@@ -86,9 +86,9 @@ class CameraOpener:
         c = self._get_camera_manager()
         l = c.getConnectedCameraList()
 
-        print("Number of cameras connected: ", l.size())
+        # print("Number of cameras connected: ", l.size())
         if l.size() == 0:
-            raise RuntimeError ("No cameras connected")
+            raise RuntimeError("No cameras connected")
 
         cam = c.createCamera(l[0])
         self._pre_initialize (cam)

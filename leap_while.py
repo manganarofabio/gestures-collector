@@ -110,10 +110,9 @@ class Gesture:
             print("error rgb cam")
             exit(-1)
 
-
         while True:
             # print(frame_counter)
-            if cv2.waitKey(1) == ord('s'):
+            if cv2.waitKey(1) == ord('s') and record_if_valid:
                 break
 
             frame = self.controller.frame()
@@ -186,7 +185,10 @@ class Gesture:
                     frame_counter += 1
 
                 else:
-                    print('hand not valid')
+                    print('image not valid')
+
+            else:
+                print("\rerror in getting valid frame", end="")
 
 
         # print(self.listener.recording)
