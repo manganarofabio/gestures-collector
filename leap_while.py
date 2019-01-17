@@ -27,7 +27,7 @@ fontScale = 1
 fontColor = (255, 255, 255)
 lineType = 1
 
-DIM_RGB_IMAGE = (400, 400)
+# DIM_RGB_IMAGE = (400, 400)
 
 
 file_info = "session_info.json"
@@ -64,7 +64,7 @@ class MyListener(roypy.IDepthDataListener):
 
 class Gesture:
 
-    def __init__(self, gesture_id, gesture_dir, controller, cam, queue, listener, id_session, maps_initialized,
+    def __init__(self, gesture_id, gesture_dir, controller, cam, queue, listener, cap, id_session, maps_initialized,
                  left_coord, right_coord, left_coeff, right_coeff):
 
         self.gesture_id = gesture_id
@@ -72,6 +72,7 @@ class Gesture:
         self.cam = cam
         self.q = queue
         self.listener = listener
+        self.cap = cap
         self.gesture_dir = gesture_dir
         self.session = id_session
         self.maps_initialized = maps_initialized
@@ -105,8 +106,13 @@ class Gesture:
         frame_counter = 0
         # print("ready to go")
         # open rgb camera
-        cap = cv2.VideoCapture(0)
-        if not cap:
+        # cap = cv2.VideoCapture(1)
+        #
+        # cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280.0)
+        # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720.0)
+        # print(cap.get(cv2.CAP_PROP_FRAME_WIDTH), cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+        if not self.cap:
             print("error rgb cam")
             exit(-1)
 
@@ -134,7 +140,7 @@ class Gesture:
                 utils.draw_ui(text="recording - press S to stop", circle=True, thickness=-1)
                 # RGB CAM
                 # get rgb image
-                ret, img_rgb = cap.read()
+                ret, img_rgb = self.cap.read()
                 # resize dim img rgb
                 if not ret:
                     print("rgb cam not working")
@@ -195,7 +201,7 @@ class Gesture:
         self.listener.setRecording(False)
         # print(self.listener.recording)
         # release rgb camera
-        cap.release()
+        # cap.release()
 
         print('record completed')
         record_if_valid = False
@@ -248,8 +254,23 @@ class Session:
                 right_coordinates, right_coefficients = utils.convert_distortion_maps(image_r)
                 maps_initialized = True
                 print('maps initialized')
-                print("ready to go")
+
                 break
+            else:
+                print('\rinvalid leap motion frame', end="")
+
+        # initialize video capture
+        while True:
+            cap = cv2.VideoCapture(1)
+            if cap:
+                # cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920.0)
+                # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080.0)
+                # print(cap.get(cv2.CAP_PROP_FRAME_WIDTH), cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                break
+            else:
+                print("\rerror rgb cam", end="")
+
+        print("ready to go")
 
         list_of_gestures = []
         for i in range(0, len(gestures)):
@@ -257,14 +278,18 @@ class Session:
             utils.draw_ui(text="press S to start recording {0}: {1}".format(i, gestures[i]))
             while cv2.waitKey() != ord('s'):
                 pass
+            print("ok")
 
-            g = Gesture(i, gestures[i], self.controller, self.cam, self.q, self.listener, self.id_session, maps_initialized,
+            g = Gesture(i, gestures[i], self.controller, self.cam, self.q, self.listener, cap, self.id_session, maps_initialized,
                         left_coord=left_coordinates, left_coeff=left_coefficients,
                         right_coord=right_coordinates, right_coeff=right_coefficients)
 
             list_of_gestures.append(g.record())
 
-        # self.cam.stopCapture()
+
+        # release videocapture
+        cap.release()
+
         list_of_thread = []
         for x in list_of_gestures:
             utils.draw_ui("Saving Session...")
