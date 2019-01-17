@@ -39,6 +39,7 @@ def draw_ui(text, circle=False, thickness=1):
         cv2.circle(img, (700, 100), 50, color=(255, 0, 0), thickness=thickness)
 
     cv2.imshow('', img)
+    # cv2.waitKey(1)
 
 
 #############################
@@ -213,7 +214,7 @@ file_info = "session_info.json"
 def save_session_info(session_id):
 
     session_info = {
-        
+
         'id': session_id
     }
 
@@ -240,7 +241,9 @@ def process_event_queue(q):
             # try to retrieve an item from the queue.
             # this will block until an item can be retrieved
            # or the timeout of 1 second is hit
-        item = q.get(True)
+        # print('ok')
+        item = q.get(True, 1)
+
     except queue.Empty:
         # this will be thrown when the timeout is hit
         print("error in queue")
@@ -252,13 +255,16 @@ def process_event_queue(q):
 def get_images_from_picoflexx(queue):
 
     item = process_event_queue(queue)
+    if item is not None:
+        z = item[0]
+        g = item[1]
 
-    z = item[0]
-    g = item[1]
-    g = g.astype(np.uint16)
-    g = cv2.normalize(g, dst=None, alpha=0, beta=65535, norm_type=cv2.NORM_MINMAX)
+        g = g.astype(np.uint16)
+        g = cv2.normalize(g, dst=None, alpha=0, beta=65535, norm_type=cv2.NORM_MINMAX)
 
-    return z, g
+        return z, g
+    else:
+        return None, None
 
 #############################
 #    LEAP MOTION IMAGES     #

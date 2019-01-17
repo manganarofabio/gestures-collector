@@ -57,7 +57,6 @@ class MyListener(roypy.IDepthDataListener):
         if self.recording:
             self.queue.put((z_p, gray_p))
 
-
     def setRecording(self, value):
         self.recording = value
 
@@ -86,7 +85,7 @@ class Gesture:
         self.directory_ru = "./data/{0}/{1}_{2}/R/undistorted".format(self.session, self.gesture_id, self.gesture_dir)
         self.directory_lu = "./data/{0}/{1}_{2}/L/undistorted".format(self.session, self.gesture_id, self.gesture_dir)
         self.directory_leap_info = "./data/{0}/{1}_{2}/leap_motion_json".format(self.session, self.gesture_id,
-                                                                           self.gesture_dir)
+                                                                                self.gesture_dir)
         self.directory_rgb = "./data/{0}/{1}_{2}/rgb".format(self.session, self.gesture_id, self.gesture_dir)
         self.directory_z = "./data/{0}/{1}_{2}/depth/z".format(self.session, self.gesture_id, self.gesture_dir)
         self.directory_ir = "./data/{0}/{1}_{2}/depth/ir".format(self.session, self.gesture_id, self.gesture_dir)
@@ -116,6 +115,7 @@ class Gesture:
             print("error rgb cam")
             exit(-1)
 
+        self.cam.startCapture()
         while True:
             # print(frame_counter)
             if cv2.waitKey(1) == ord('s') and record_if_valid:
@@ -128,7 +128,7 @@ class Gesture:
 
             # print(self.listener.recording)
             if utils.hand_is_valid(frame) and not record_if_valid:
-                print('hand is valid- ready to start')
+                print('hand is valid -> ready to start')
                 record_if_valid = True
                 # print(self.listener.recording)
                 print("start gesture")
@@ -136,49 +136,49 @@ class Gesture:
                 # print(self.listener.recording)
 
             if record_if_valid:
-
+                print("\rrecord valid -> showing {}".format(frame_counter), end="")
                 utils.draw_ui(text="recording - press S to stop", circle=True, thickness=-1)
                 # RGB CAM
                 # get rgb image
+                # print(1)
                 ret, img_rgb = self.cap.read()
+                # print(2)
                 # resize dim img rgb
                 if not ret:
-                    print("rgb cam not working")
+                    print("\nrgb cam not working")
                     exit(-1)
+                # cv2.imshow('img_rgb', img_rgb)
+                # cv2.waitKey(1)
 
                 # Leap Motion
-                image_l = frame.images[0]
-                image_r = frame.images[1]
+                if frame.is_valid:
+                    image_l = frame.images[0]
+                    image_r = frame.images[1]
+                    # print(3)
+                else:
+                    print("\rframe {} not valid".format(frame_counter), end="")
+                    continue
 
                 if image_l.is_valid and image_r.is_valid:
-
+                    # print(4)
                     raw_img_l = utils.get_raw_image(image_l)
                     raw_img_r = utils.get_raw_image(image_r)
                     # undistorted images
                     undistorted_left = utils.undistort(image_l, self.left_coord, self.left_coeff, 400, 400)
                     undistorted_right = utils.undistort(image_r, self.right_coord, self.right_coeff, 400, 400)
-
+                    # print(5)
                     cv2.imshow('img', undistorted_right)
 
                     # json
                     json_obj = utils.frame2json_struct(frame)
-
+                    # print(6)
                     # PICOFLEXX
                     z, ir = utils.get_images_from_picoflexx(self.q)
+                    if z is None or ir is None:
+                        print("\rpico image not valid", end="")
+                        continue
 
-                    # if args.on_disk:
-                    #
-                    #     thr = utils.ThreadOnDisk(raw_img_r, undistorted_right, raw_img_l, undistorted_left, json_obj,
-                    #                              img_rgb, z, ir, frame_counter, self.directory_rr, self.directory_ru,
-                    #                              self.directory_lr,
-                    #                              self.directory_lu,
-                    #                              self.directory_leap_info,
-                    #                              self.directory_rgb,
-                    #                              self.directory_z,
-                    #                              self.directory_ir)
-                    #
-                    #     thr.start()
-                    # else:
+                    # print(7)
                     list_img_rr.append(raw_img_r.copy())
                     list_img_ru.append(undistorted_right.copy())
                     list_img_lr.append(raw_img_l.copy())
@@ -189,25 +189,25 @@ class Gesture:
                     list_img_ir.append(ir.copy())
 
                     frame_counter += 1
-
+                    # print(8)
                 else:
                     print('image not valid')
 
             else:
                 print("\rerror in getting valid frame", end="")
 
-
         # print(self.listener.recording)
         self.listener.setRecording(False)
+        self.cam.stopCapture()
+
         # print(self.listener.recording)
         # release rgb camera
         # cap.release()
 
-        print('record completed')
+        print('\nrecord completed')
         record_if_valid = False
         # scrittura su disco
         if not args.on_disk:
-
             # # thread
             # threads.append(utils.ThreadWritingGesture(list_img_rr, list_img_ru, list_img_lr, list_img_lu, list_json, list_img_rgb,
             #                          list_img_z, list_img_ir,
@@ -215,17 +215,14 @@ class Gesture:
             #                          self.directory_leap_info, self.directory_rgb, self.directory_z, self.directory_ir))
             #
             # threads[-1].start()
-            return utils.GestureData(self.gesture_id, list_img_rr, list_img_ru, list_img_lr, list_img_lu, list_json, list_img_rgb,
+            return utils.GestureData(self.gesture_id, list_img_rr, list_img_ru, list_img_lr, list_img_lu, list_json,
+                                     list_img_rgb,
                                      list_img_z, list_img_ir,
                                      self.directory_rr, self.directory_ru, self.directory_lr, self.directory_lu,
                                      self.directory_leap_info, self.directory_rgb, self.directory_z, self.directory_ir)
 
 
-
-
-
 class Session:
-
     controller = 0
     id_session = 1
     dir = 0
@@ -240,7 +237,7 @@ class Session:
 
     def run_session(self):
 
-        #init leap motion
+        # init leap motion
 
         print("waiting for maps initialization...")
         while True:
@@ -262,6 +259,7 @@ class Session:
         # initialize video capture
         while True:
             cap = cv2.VideoCapture(1)
+            print(cap)
             if cap:
                 # cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920.0)
                 # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080.0)
@@ -278,14 +276,13 @@ class Session:
             utils.draw_ui(text="press S to start recording {0}: {1}".format(i, gestures[i]))
             while cv2.waitKey() != ord('s'):
                 pass
-            print("ok")
 
-            g = Gesture(i, gestures[i], self.controller, self.cam, self.q, self.listener, cap, self.id_session, maps_initialized,
+            g = Gesture(i, gestures[i], self.controller, self.cam, self.q, self.listener, cap, self.id_session,
+                        maps_initialized,
                         left_coord=left_coordinates, left_coeff=left_coefficients,
                         right_coord=right_coordinates, right_coeff=right_coefficients)
 
             list_of_gestures.append(g.record())
-
 
         # release videocapture
         cap.release()
@@ -302,12 +299,11 @@ class Session:
 
 
 def run(controller, cam):
-
     # inizializzazione picoflexx
     q = queue.Queue()
     listener = MyListener(q, recording=False)
     cam.registerDataListener(listener)
-    cam.startCapture()
+    # cam.startCapture()
 
     if not os.path.exists("./data"):
         session_counter = 0
@@ -341,7 +337,7 @@ def run(controller, cam):
         directory = "./data/{}".format(sess.id_session)
         if not os.path.exists(directory):
             os.makedirs(directory)
-       
+
         sess.dir = directory
         print("session {} started".format(sess.id_session))
         sess.run_session()
@@ -351,7 +347,7 @@ def run(controller, cam):
         for th in threads:
             th.join()
 
-    cam.stopCapture()
+    # cam.stopCapture()
 
 
 def str2bool(value):
