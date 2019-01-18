@@ -2,13 +2,10 @@ import numpy as np
 import cv2
 import ctypes
 import os, inspect, sys
-# from threading import Thread
 from multiprocessing import Process as Thread
 import json
-# import queue
 import multiprocessing.queues as queue
-# import scipy.misc
-# from PIL import Image
+
 
 src_dir = os.path.dirname(inspect.getfile(inspect.currentframe()))
 # Windows and Linux

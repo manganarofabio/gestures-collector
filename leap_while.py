@@ -2,14 +2,11 @@ import os, inspect, sys
 import utils
 import cv2
 import numpy as np
-import json
 import argparse
-import time
 import queue
 import roypy
-from sample_camera_info import print_camera_info
 from roypy_sample_utils import CameraOpener, add_camera_opener_options
-from roypy_platform_utils import PlatformHelper
+
 
 asd = 4
 
@@ -31,7 +28,8 @@ lineType = 1
 
 
 file_info = "session_info.json"
-gestures = ['g0', 'g1', 'g2', 'g3', 'g4', 'g5', 'g6', 'g7', 'g8', 'g9']
+gestures = ['g0']
+#, 'g1', 'g2', 'g3', 'g4', 'g5', 'g6', 'g7', 'g8', 'g9']
 threads = []
 
 
@@ -208,13 +206,7 @@ class Gesture:
         record_if_valid = False
         # scrittura su disco
         if not args.on_disk:
-            # # thread
-            # threads.append(utils.ThreadWritingGesture(list_img_rr, list_img_ru, list_img_lr, list_img_lu, list_json, list_img_rgb,
-            #                          list_img_z, list_img_ir,
-            #                          self.directory_rr, self.directory_ru, self.directory_lr, self.directory_lu,
-            #                          self.directory_leap_info, self.directory_rgb, self.directory_z, self.directory_ir))
-            #
-            # threads[-1].start()
+
             return utils.GestureData(self.gesture_id, list_img_rr, list_img_ru, list_img_lr, list_img_lu, list_json,
                                      list_img_rgb,
                                      list_img_z, list_img_ir,
@@ -299,6 +291,7 @@ class Session:
 
 
 def run(controller, cam):
+
     # inizializzazione picoflexx
     q = queue.Queue()
     listener = MyListener(q, recording=False)
@@ -342,10 +335,6 @@ def run(controller, cam):
         print("session {} started".format(sess.id_session))
         sess.run_session()
         session_counter += 1
-
-        # join of threads
-        for th in threads:
-            th.join()
 
     # cam.stopCapture()
 
