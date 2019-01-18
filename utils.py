@@ -6,7 +6,6 @@ from multiprocessing import Process as Thread
 import json
 import multiprocessing.queues as queue
 
-
 src_dir = os.path.dirname(inspect.getfile(inspect.currentframe()))
 # Windows and Linux
 arch_dir = './leap_lib'
@@ -86,7 +85,8 @@ class GestureData:
 
     def saveGestureData(self):
 
-        th = ThreadWritingGesture(self.id_gesture, self.list_img_rr, self.list_img_ru, self.list_img_lr, self.list_img_lu, self.list_json,
+        th = ThreadWritingGesture(self.id_gesture, self.list_img_rr, self.list_img_ru, self.list_img_lr,
+                                  self.list_img_lu, self.list_json,
                                   self.list_img_rgb, self.list_img_z, self.list_img_ir, self.directory_rr,
                                   self.directory_ru, self.directory_lr, self.directory_lu, self.directory_leap_info,
                                   self.directory_rgb, self.directory_z, self.directory_ir)
@@ -136,23 +136,23 @@ class ThreadWritingGesture(Thread):
                                                                                     self.list_img_ir)):
 
             if img_ru is not None:
-                cv2.imwrite("{0}/{1}_r.png".format(self.directory_ru, i), img_ru)
+                cv2.imwrite("{}/{:03d}_ru.png".format(self.directory_ru, i), img_ru)
             if img_rr is not None:
-                cv2.imwrite("{0}/{1}_rr.png".format(self.directory_rr, i), img_rr)
+                cv2.imwrite("{}/{:03d}_rr.png".format(self.directory_rr, i), img_rr)
             if img_lu is not None:
-                cv2.imwrite("{0}/{1}_ul.png".format(self.directory_lu, i), img_lu)
+                cv2.imwrite("{}/{:03d}_ul.png".format(self.directory_lu, i), img_lu)
             if img_lr is not None:
-                cv2.imwrite("{0}/{1}_rl.png".format(self.directory_lr, i), img_lr)
+                cv2.imwrite("{}/{:03d}_rl.png".format(self.directory_lr, i), img_lr)
             if img_rgb is not None:
-                cv2.imwrite("{0}/{1}_rgb.png".format(self.directory_rgb, i), img_rgb)
+                cv2.imwrite("{}/{:03d}_rgb.png".format(self.directory_rgb, i), img_rgb)
             if img_z is not None:
-                np.savetxt("{0}/{1}_z.gz".format(self.directory_z, i), img_z)
+                np.savetxt("{}/{:03d}_z.gz".format(self.directory_z, i), img_z)
             if img_ir is not None:
-                cv2.imwrite("{0}/{1}_ir.png".format(self.directory_ir, i), img_ir)
+                cv2.imwrite("{}/{:03d}_ir.png".format(self.directory_ir, i), img_ir)
 
             # print('ok')
             if json_obj is not None:
-                with open("{0}/{1}.json".format(self.directory_leap_info, i), 'w') as outfile:
+                with open("{}/{:03d}.json".format(self.directory_leap_info, i), 'w') as outfile:
                     json.dump(json_obj, outfile)
 
         print('saving gesture {} completed'.format(self.id_gesture))

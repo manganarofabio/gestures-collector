@@ -28,8 +28,7 @@ lineType = 1
 
 
 file_info = "session_info.json"
-gestures = ['g0']
-#, 'g1', 'g2', 'g3', 'g4', 'g5', 'g6', 'g7', 'g8', 'g9']
+gestures = ['g00', 'g01', 'g02', 'g03', 'g04', 'g05', 'g06', 'g07', 'g08', 'g09']
 threads = []
 
 
@@ -78,15 +77,14 @@ class Gesture:
         self.left_coeff = left_coeff
         self.right_coeff = right_coeff
         # directories
-        self.directory_rr = "./data/{0}/{1}_{2}/R/raw".format(self.session, self.gesture_id, self.gesture_dir)
-        self.directory_lr = "./data/{0}/{1}_{2}/L/raw".format(self.session, self.gesture_id, self.gesture_dir)
-        self.directory_ru = "./data/{0}/{1}_{2}/R/undistorted".format(self.session, self.gesture_id, self.gesture_dir)
-        self.directory_lu = "./data/{0}/{1}_{2}/L/undistorted".format(self.session, self.gesture_id, self.gesture_dir)
-        self.directory_leap_info = "./data/{0}/{1}_{2}/leap_motion_json".format(self.session, self.gesture_id,
-                                                                                self.gesture_dir)
-        self.directory_rgb = "./data/{0}/{1}_{2}/rgb".format(self.session, self.gesture_id, self.gesture_dir)
-        self.directory_z = "./data/{0}/{1}_{2}/depth/z".format(self.session, self.gesture_id, self.gesture_dir)
-        self.directory_ir = "./data/{0}/{1}_{2}/depth/ir".format(self.session, self.gesture_id, self.gesture_dir)
+        self.directory_rr = "./data/{:03d}/{}/R/raw".format(self.session, self.gesture_dir)
+        self.directory_lr = "./data/{:03d}/{}/L/raw".format(self.session, self.gesture_dir)
+        self.directory_ru = "./data/{:03d}/{}/R/undistorted".format(self.session, self.gesture_dir)
+        self.directory_lu = "./data/{:03d}/{}/L/undistorted".format(self.session, self.gesture_dir)
+        self.directory_leap_info = "./data/{:03d}/{}/leap_motion_json".format(self.session, self.gesture_dir)
+        self.directory_rgb = "./data/{:03d}/{}/rgb".format(self.session, self.gesture_dir)
+        self.directory_z = "./data/{:03d}/{}/depth/z".format(self.session, self.gesture_dir)
+        self.directory_ir = "./data/{:03d}/{}/depth/ir".format(self.session, self.gesture_dir)
 
     def record(self):
 
@@ -192,7 +190,7 @@ class Gesture:
                     print('image not valid')
 
             else:
-                print("\rerror in getting valid frame", end="")
+                print("\rerror in getting valid leap motion frame", end="")
 
         # print(self.listener.recording)
         self.listener.setRecording(False)
