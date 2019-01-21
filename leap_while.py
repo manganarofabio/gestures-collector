@@ -28,8 +28,8 @@ lineType = 1
 
 
 file_info = "session_info.json"
-gestures = ['g00', 'g01', 'g02', 'g03', 'g04', 'g05', 'g06', 'g07', 'g08', 'g09']
-threads = []
+gestures = ['g00', 'g01', 'g02', 'g03', 'g04', 'g05', 'g06', 'g07', 'g08', 'g09', 'g10', 'g11', 'g12_test']
+NUMBER_OF_SESSIONS_PER_PERSON = 3
 
 
 class MyListener(roypy.IDepthDataListener):
@@ -124,7 +124,7 @@ class Gesture:
 
             # print(self.listener.recording)
             if utils.hand_is_valid(frame) and not record_if_valid:
-                print('hand is valid -> ready to start')
+                print('\nhand is valid -> ready to start')
                 record_if_valid = True
                 # print(self.listener.recording)
                 print("start gesture")
@@ -218,12 +218,13 @@ class Session:
     dir = 0
     gest_counter = 0
 
-    def __init__(self, id_session, controller, cam, queue, listener):
+    def __init__(self, id_session, controller, cam, queue, listener, last_session=False):
         self.id_session = id_session
         self.controller = controller
         self.cam = cam
         self.q = queue
         self.listener = listener
+        self.last_session = last_session
 
     def run_session(self):
 
@@ -262,6 +263,9 @@ class Session:
 
         list_of_gestures = []
         for i in range(0, len(gestures)):
+
+            if (i == len(gestures) - 1) and self.last_session is False:
+                break
 
             utils.draw_ui(text="press S to start recording {0}: {1}".format(i, gestures[i]))
             while cv2.waitKey() != ord('s'):
@@ -307,25 +311,33 @@ def run(controller, cam):
     else:
         session_start = utils.load_session_info() + 1
         session_counter = session_start
-    while True:
+
+    last_session = False
+    for i in range(NUMBER_OF_SESSIONS_PER_PERSON):
 
         if session_counter == session_start:
             print("press E to start new session of recording")
             utils.draw_ui(text="press E to start new session of recording")
-        else:
-            print("press E to start new session of recording or Q to quit")
-            utils.draw_ui(text="press E to start new session of recording or Q to quit")
+        elif i < NUMBER_OF_SESSIONS_PER_PERSON - 1:
+            print("press E to record session {}".format(i))
+            utils.draw_ui(text="press E to record session {}".format(i))
+        else:  # ultima sessione
+            print("press E to record session {}".format(i))
+            utils.draw_ui(text="press E to record session {}".format(i))
+            last_session = True
+
         k = cv2.waitKey()
         if k == ord('e'):
             pass
-        elif k == ord('q'):
-            print("end collection")
-            utils.save_session_info(session_id=session_counter - 1)
-            break
-        sess = Session(id_session=session_counter, controller=controller, cam=cam, queue=q, listener=listener)
+        # elif k == ord('q'):
+        #     print("end collection")
+        #     utils.save_session_info(session_id=session_counter - 1)
+        #     break
+        sess = Session(id_session=session_counter, controller=controller, cam=cam, queue=q, listener=listener,
+                       last_session=last_session)
 
         # creazione directory per sessione
-        directory = "./data/{}".format(sess.id_session)
+        directory = "./data/{:03d}".format(sess.id_session)
         if not os.path.exists(directory):
             os.makedirs(directory)
 
@@ -333,6 +345,10 @@ def run(controller, cam):
         print("session {} started".format(sess.id_session))
         sess.run_session()
         session_counter += 1
+
+    # end collection
+    print("end collection")
+    utils.save_session_info(session_id=session_counter - 1)
 
     # cam.stopCapture()
 
