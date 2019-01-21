@@ -271,7 +271,7 @@ class Session:
             while cv2.waitKey() != ord('s'):
                 pass
 
-            g = Gesture(i, gestures[i], self.controller, self.cam, self.q, self.listener, cap, self.id_session,
+            g = Gesture(i, gestures[i],  self.controller, self.cam, self.q, self.listener, cap, self.id_session,
                         maps_initialized,
                         left_coord=left_coordinates, left_coeff=left_coefficients,
                         right_coord=right_coordinates, right_coeff=right_coefficients)

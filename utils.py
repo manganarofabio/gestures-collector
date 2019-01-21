@@ -5,6 +5,7 @@ import os, inspect, sys
 from multiprocessing import Process as Thread
 import json
 import multiprocessing.queues as queue
+import shutil
 
 src_dir = os.path.dirname(inspect.getfile(inspect.currentframe()))
 # Windows and Linux
@@ -20,7 +21,7 @@ def draw_ui(text, circle=False, thickness=1):
 
     bottomLeftCornerOfText = (0, 50)
     font = cv2.FONT_HERSHEY_SIMPLEX
-    fontScale = 1
+    fontScale = 0.5 #1
     fontColor = (255, 255, 255)
     lineType = 1
 
@@ -46,9 +47,11 @@ def draw_ui(text, circle=False, thickness=1):
 class GestureData:
 
     def __init__(self, id_gesture, list_rr, list_ru, list_lr, list_lu, list_json_obj, list_img_rgb,
-                 list_img_z, list_img_ir, dir_rr, dir_ru, dir_lr, dir_lu, dir_leap_info, dir_rgb, dir_z, dir_ir):
+                 list_img_z, list_img_ir, dir_rr, dir_ru, dir_lr, dir_lu, dir_leap_info, dir_rgb, dir_z, dir_ir,
+                 rewrite=False):
 
         self.id_gesture = id_gesture
+        self.rewrite = rewrite
         self.list_img_rr = list_rr
         self.list_img_ru = list_ru
         self.list_img_lr = list_lr
@@ -66,22 +69,52 @@ class GestureData:
         self.directory_z = dir_z
         self.directory_ir = dir_ir
 
-        if not os.path.exists(self.directory_rr)and not os.path.exists(self.directory_lr) and \
-                not os.path.exists(self.directory_lr) and not os.path.exists(self.directory_lu) \
-                and not os.path.exists(self.directory_leap_info) and not os.path.exists(self.directory_rgb) \
-                and not os.path.exists(self.directory_z) and not os.path.exists(self.directory_ir):
-            os.makedirs(self.directory_rr)
-            os.makedirs(self.directory_lr)
-            os.makedirs(self.directory_ru)
-            os.makedirs(self.directory_lu)
-            os.makedirs(self.directory_leap_info)
-            os.makedirs(self.directory_rgb)
-            os.makedirs(self.directory_z)
-            os.makedirs(self.directory_ir)
+        if not rewrite:
+            if not os.path.exists(self.directory_rr)and not os.path.exists(self.directory_lr) and \
+                    not os.path.exists(self.directory_lr) and not os.path.exists(self.directory_lu) \
+                    and not os.path.exists(self.directory_leap_info) and not os.path.exists(self.directory_rgb) \
+                    and not os.path.exists(self.directory_z) and not os.path.exists(self.directory_ir):
+                os.makedirs(self.directory_rr)
+                os.makedirs(self.directory_lr)
+                os.makedirs(self.directory_ru)
+                os.makedirs(self.directory_lu)
+                os.makedirs(self.directory_leap_info)
+                os.makedirs(self.directory_rgb)
+                os.makedirs(self.directory_z)
+                os.makedirs(self.directory_ir)
 
+            else:
+                print("error on loading session info")
+                exit(-1)
         else:
-            print("error on loading session info")
-            exit(-1)
+            # remove old directories and files
+            shutil.rmtree(self.directory_rr, ignore_errors=True)
+            shutil.rmtree(self.directory_lr, ignore_errors=True)
+            shutil.rmtree(self.directory_ru, ignore_errors=True)
+            shutil.rmtree(self.directory_lu, ignore_errors=True)
+            shutil.rmtree(self.directory_leap_info, ignore_errors=True)
+            shutil.rmtree(self.directory_rgb, ignore_errors=True)
+            shutil.rmtree(self.directory_z, ignore_errors=True)
+            shutil.rmtree(self.directory_ir, ignore_errors=True)
+
+            # create new directories
+
+            if not os.path.exists(self.directory_rr) and not os.path.exists(self.directory_lr) and \
+                    not os.path.exists(self.directory_lr) and not os.path.exists(self.directory_lu) \
+                    and not os.path.exists(self.directory_leap_info) and not os.path.exists(self.directory_rgb) \
+                    and not os.path.exists(self.directory_z) and not os.path.exists(self.directory_ir):
+                os.makedirs(self.directory_rr)
+                os.makedirs(self.directory_lr)
+                os.makedirs(self.directory_ru)
+                os.makedirs(self.directory_lu)
+                os.makedirs(self.directory_leap_info)
+                os.makedirs(self.directory_rgb)
+                os.makedirs(self.directory_z)
+                os.makedirs(self.directory_ir)
+
+            else:
+                print("error on loading session info")
+                exit(-1)
 
     def saveGestureData(self):
 
@@ -243,7 +276,7 @@ def process_event_queue(q):
 
     except queue.Empty:
         # this will be thrown when the timeout is hit
-        print("error in queue")
+        print("error in queue\n")
         return None
     else:
         return item
