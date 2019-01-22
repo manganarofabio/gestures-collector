@@ -276,7 +276,7 @@ def process_event_queue(q):
 
     except queue.Empty:
         # this will be thrown when the timeout is hit
-        print("error in queue\n")
+        print("\nerror in queue")
         return None
     else:
         return item
