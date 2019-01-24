@@ -6,6 +6,7 @@ from multiprocessing import Process as Thread
 import json
 import multiprocessing.queues as queue
 import shutil
+import matplotlib.pyplot as plt
 
 src_dir = os.path.dirname(inspect.getfile(inspect.currentframe()))
 # Windows and Linux
@@ -185,7 +186,7 @@ class ThreadWritingGesture(Thread):
 
             # print('ok')
             if json_obj is not None:
-                with open("{}/{:03d}.json".format(self.directory_leap_info, i), 'w') as outfile:
+                with open("{}/{:03d}_js.json".format(self.directory_leap_info, i), 'w') as outfile:
                     json.dump(json_obj, outfile)
 
         print('saving gesture {} completed'.format(self.id_gesture))
@@ -230,7 +231,7 @@ class ThreadOnDisk(Thread):
         cv2.imwrite("{0}/{1}_ir.png".format(self.directory_ir, self.frame_counter), self.img_ir)
 
         #
-        with open("{0}/{1}.json".format(self.directory_leap_info, self.frame_counter), 'w') as outfile:
+        with open("{0}/{1}_js.json".format(self.directory_leap_info, self.frame_counter), 'w') as outfile:
             json.dump(self.json_obj, outfile)
 
 #############################
@@ -286,6 +287,7 @@ def get_images_from_picoflexx(queue):
 
     item = process_event_queue(queue)
     if item is not None:
+
         z = item[0]
         g = item[1]
 
