@@ -16,12 +16,10 @@ def get_data_from_img(img_path):
     p = os.path.normpath(img_path)
     return p.split(os.sep)
 
+
 def check_first_image(relative_name_img):
     s = relative_name_img.split('_')
     return int(s[0]) == 0
-
-
-
 
 
 def main():
@@ -37,17 +35,14 @@ def main():
         file_writer.writerow(['img_path', 'session_id', 'gesture_id', 'record', 'mode', 'label', 'first'])
         for img in l:
             data = get_data_from_img(img)
+            if data[-5] == 'g12_test' or data[-4] == 'g12_test':
+                continue
             first = check_first_image(data[-1])
             if data[-3] == 'depth' or data[-3] == 'L' or data[-3] == 'R':
-                file_writer.writerow([img, data[-6], data[-5], data[-4], data[-2], data[-5], first])
+                file_writer.writerow([img, data[-6], data[-5], data[-4], data[-2], data[-5][1:],
+                                      first])
             else:
-                file_writer.writerow([img, data[-5], data[-4], data[-3], data[-2], data[4], first])
-
-
-
-
-
-
+                file_writer.writerow([img, data[-5], data[-4], data[-3], data[-2], data[-4][1:], first])
 
 
 if __name__ == '__main__':

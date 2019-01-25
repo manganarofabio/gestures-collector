@@ -118,11 +118,13 @@ class Gesture:
         if not self.cap:
             print("error rgb cam")
             exit(-1)
-
+        error_queue = False
         self.cam.startCapture()
         while True:
             # print(frame_counter)
-            if cv2.waitKey(1) == ord('s') and record_if_valid and frame_counter > NUMBER_OF_MINIMUM_FRAMES_PER_RECORD:
+            if (cv2.waitKey(1) == ord('s') and record_if_valid and frame_counter > NUMBER_OF_MINIMUM_FRAMES_PER_RECORD)\
+                    or error_queue:
+                # print(error_queue)
                 break
 
             frame = self.controller.frame()
@@ -180,16 +182,20 @@ class Gesture:
                     json_obj = utils.frame2json_struct(frame)
                     # print(6)
                     # PICOFLEXX
-                    z, ir = utils.get_images_from_picoflexx(self.q)
-                    if z is None or ir is None:
-                        print("\rpico image not valid", end="")
+                    #imgs == (z, ir)
+                    ret_pico, imgs = utils.get_images_from_picoflexx(self.q)
+                    # print("ret_pico, z, ir", ret_pico, imgs[0], imgs[1])
+                    if not ret_pico:
+                        print("pico image not valid")
+                        error_queue = True
                         continue
+
                     cv2.moveWindow('img_rgb', -700, 325)
                     cv2.moveWindow('img_leap', -1150, 400)
                     cv2.moveWindow('img_ir', -1500, 600)
                     cv2.imshow('img_leap', undistorted_right)
                     cv2.imshow('img_rgb', img_rgb)
-                    cv2.imshow('img_ir', ir)
+                    cv2.imshow('img_ir', imgs[1])
 
                     # print(7)
                     list_img_rr.append(raw_img_r.copy())
@@ -198,8 +204,11 @@ class Gesture:
                     list_img_lu.append(undistorted_left.copy())
                     list_img_rgb.append(img_rgb.copy())
                     list_json.append(json_obj)
-                    list_img_z.append(z.copy())
-                    list_img_ir.append(ir.copy())
+                    list_img_z.append(imgs[0].copy())
+                    list_img_ir.append(imgs[1].copy())
+
+                    # list_img_z.append(z.copy())
+                    # list_img_ir.append(ir.copy())
 
                     frame_counter += 1
                     # print(8)
@@ -285,6 +294,7 @@ class Session:
         list_of_gestures = []
         counter_gesture = 0
         rewrite = False
+        skip_gesture = False
         for i in range(0, len(gestures)):
 
             # if (i == len(gestures) - 1) and self.last_session is False:
@@ -292,16 +302,26 @@ class Session:
 
             while True:
 
-                if counter_gesture == NUMBER_OF_RECORDS_PER_GESTURE:
-                    counter_gesture = 0
-                    break
+                # if counter_gesture == NUMBER_OF_RECORDS_PER_GESTURE:
+                #     pass
                 # if (i == len(gestures) - 1) and counter_gesture > 0:
                 #     #counter_gesture = 0
+                if skip_gesture is True:
+                    skip_gesture = False
+                    break
 
                 if counter_gesture == 0:
                     utils.draw_ui(text="press S to start record {0} of {1}".format(counter_gesture, gestures[i]))
                 elif (i == len(gestures) - 1) and counter_gesture > 0:
                     utils.draw_ui(text="press R to repeat last record or Q to quit")
+                elif counter_gesture == NUMBER_OF_RECORDS_PER_GESTURE:
+                    utils.draw_ui(text="press S to start record {}/{} of {}/{:02d}"
+                                       " or press R to repeat record {} of previous gesture"
+                                  .format(0,
+                                          NUMBER_OF_RECORDS_PER_GESTURE - 1,
+                                          gestures[i + 1], len(gestures) - 1,
+                                          counter_gesture - 1))
+                    # counter_gesture -= 1
                 else:
                     utils.draw_ui(text="press S to start record {}/{} of {}/{:02d}"
                                        " or press R to repeat record {}".format(counter_gesture,
@@ -311,7 +331,12 @@ class Session:
 
                 while True:
                         k = cv2.waitKey()
-                        if k == ord('s'):
+                        if k == ord('s') and counter_gesture < NUMBER_OF_RECORDS_PER_GESTURE:
+                            break
+                        elif k == ord('s') and counter_gesture == NUMBER_OF_RECORDS_PER_GESTURE:
+                            counter_gesture = 0
+                            skip_gesture = True
+                            rewrite = False
                             break
                         elif k == ord('r') and counter_gesture > 0 and i == len(gestures) - 1:
                             counter_gesture = 0
@@ -323,10 +348,11 @@ class Session:
                             rewrite = True
                             break
                         elif k == ord('q') and i == len(gestures) - 1:
-                            counter_gesture = NUMBER_OF_RECORDS_PER_GESTURE
+                            counter_gesture = 0
+                            skip_gesture = True
                             break
 
-                if counter_gesture != NUMBER_OF_RECORDS_PER_GESTURE:
+                if counter_gesture < NUMBER_OF_RECORDS_PER_GESTURE and not skip_gesture:
                     g = Gesture(i, gestures[i], counter_gesture, self.controller, self.cam, self.q, self.listener, cap,
                                 self.id_session, maps_initialized,
                                 left_coord=left_coordinates, left_coeff=left_coefficients,
