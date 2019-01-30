@@ -39,10 +39,13 @@ def main():
                 continue
             first = check_first_image(data[-1])
             if data[-3] == 'depth' or data[-3] == 'L' or data[-3] == 'R':
-                file_writer.writerow([img, data[-6], data[-5], data[-4], data[-2], data[-5][1:],
-                                      first])
+                file_writer.writerow(
+                    [img, data[-6], data[-5], data[-4], "{}_{}".format(data[-3], data[-2]), data[-5][1:]
+                        , first])
             else:
-                file_writer.writerow([img, data[-5], data[-4], data[-3], data[-2], data[-4][1:], first])
+                file_writer.writerow(
+                    [img, data[-5], data[-4], data[-3], "{}_{}".format(data[-3], data[-2]), data[-4][1:]
+                        , first])
 
 
 if __name__ == '__main__':

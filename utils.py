@@ -44,6 +44,53 @@ def draw_ui(text, circle=False, thickness=1):
 #        SAVING THREADS     #
 #############################
 
+def save_single_record(list_rr, list_ru, list_lr, list_lu, list_json_obj, list_img_rgb,
+                 list_img_z, list_img_ir, dir_rr, dir_ru, dir_lr, dir_lu, dir_leap_info, dir_rgb, dir_z, dir_ir):
+
+    if not os.path.exists(dir_rr) and not os.path.exists(dir_lr) and \
+            not os.path.exists(dir_lr) and not os.path.exists(dir_lu) \
+            and not os.path.exists(dir_leap_info) and not os.path.exists(dir_rgb) \
+            and not os.path.exists(dir_z) and not os.path.exists(dir_ir):
+        os.makedirs(dir_rr)
+        os.makedirs(dir_lr)
+        os.makedirs(dir_ru)
+        os.makedirs(dir_lu)
+        os.makedirs(dir_leap_info)
+        os.makedirs(dir_rgb)
+        os.makedirs(dir_z)
+        os.makedirs(dir_ir)
+
+        for i, (img_rr, img_ru, img_lr, img_lu, json_obj, img_rgb, img_z, img_ir) in enumerate(zip(list_rr,
+                                                                                                   list_ru,
+                                                                                                   list_lr,
+                                                                                                   list_lu,
+                                                                                                   list_json_obj,
+                                                                                                   list_img_rgb,
+                                                                                                   list_img_z,
+                                                                                                   list_img_ir)):
+
+            if img_ru is not None:
+                cv2.imwrite("{}/{:03d}_ru.png".format(dir_ru, i), img_ru)
+            if img_rr is not None:
+                cv2.imwrite("{}/{:03d}_rr.png".format(dir_rr, i), img_rr)
+            if img_lu is not None:
+                cv2.imwrite("{}/{:03d}_ul.png".format(dir_lu, i), img_lu)
+            if img_lr is not None:
+                cv2.imwrite("{}/{:03d}_rl.png".format(dir_lr, i), img_lr)
+            if img_rgb is not None:
+                cv2.imwrite("{}/{:03d}_rgb.png".format(dir_rgb, i), img_rgb)
+            if img_z is not None:
+                np.savetxt("{}/{:03d}_z.gz".format(dir_z, i), img_z)
+            if img_ir is not None:
+                cv2.imwrite("{}/{:03d}_ir.png".format(dir_ir, i), img_ir)
+
+            # print('ok')
+            if json_obj is not None:
+                with open("{}/{:03d}_js.json".format(dir_leap_info, i), 'w') as outfile:
+                    json.dump(json_obj, outfile)
+
+        print("session saved")
+
 
 class GestureData:
 

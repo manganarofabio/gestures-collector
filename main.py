@@ -6,6 +6,7 @@ import argparse
 import queue
 import roypy
 from roypy_sample_utils import CameraOpener, add_camera_opener_options
+import argparse
 
 
 asd = 4
@@ -18,20 +19,19 @@ sys.path.insert(0, os.path.abspath(os.path.join(src_dir, arch_dir)))
 
 import Leap
 
-bottomLeftCornerOfText = (0, 50)
-font = cv2.FONT_HERSHEY_SIMPLEX
-fontScale = 1
-fontColor = (255, 255, 255)
-lineType = 1
-
-# DIM_RGB_IMAGE = (400, 400)
+parser = argparse.ArgumentParser(description='Gesture collector')
+parser.add_argument('--file_info', type=str, default="session_info.json", help="config session file")
+parser.add_argument('--n_records_gesture', type=int, default=3, help="number of records per gesture")
+parser.add_argument('--n_min_frames', type=int, default=40, help="minimum namber of frames to record per gesture")
 
 
-file_info = "session_info.json"
+# bottomLeftCornerOfText = (0, 50)
+# font = cv2.FONT_HERSHEY_SIMPLEX
+# fontScale = 1
+# fontColor = (255, 255, 255)
+# lineType = 1
+
 gestures = ['g00', 'g01', 'g02', 'g03', 'g04', 'g05', 'g06', 'g07', 'g08', 'g09', 'g10', 'g11', 'g12_test']
-NUMBER_OF_SESSIONS_PER_PERSON = 3
-NUMBER_OF_RECORDS_PER_GESTURE = 3
-NUMBER_OF_MINIMUM_FRAMES_PER_RECORD = 35
 
 
 class MyListener(roypy.IDepthDataListener):
@@ -87,8 +87,9 @@ class Gesture:
                                                                            self.record_number)
         self.directory_lu = "./data/{:03d}/{}/{:02d}/L/undistorted".format(self.session, self.gesture_dir,
                                                                            self.record_number)
-        self.directory_leap_info = "./data/{:03d}/{}/{:02d}/leap_motion_json".format(self.session, self.gesture_dir,
-                                                                                     self.record_number)
+        self.directory_leap_info = "./data/{:03d}/{}/{:02d}/leap_motion/tracking_data".format(self.session,
+                                                                                              self.gesture_dir,
+                                                                                              self.record_number)
         self.directory_rgb = "./data/{:03d}/{}/{:02d}/rgb".format(self.session, self.gesture_dir, self.record_number)
         self.directory_z = "./data/{:03d}/{}/{:02d}/depth/z".format(self.session, self.gesture_dir, self.record_number)
         self.directory_ir = "./data/{:03d}/{}/{:02d}/depth/ir".format(self.session, self.gesture_dir,
@@ -122,7 +123,7 @@ class Gesture:
         self.cam.startCapture()
         while True:
             # print(frame_counter)
-            if (cv2.waitKey(1) == ord('s') and record_if_valid and frame_counter > NUMBER_OF_MINIMUM_FRAMES_PER_RECORD)\
+            if (cv2.waitKey(1) == ord('s') and record_if_valid and frame_counter > args.n_min_frames)\
                     or error_queue:
                 # print(error_queue)
                 break
@@ -314,26 +315,26 @@ class Session:
                     utils.draw_ui(text="press S to start record {0} of {1}".format(counter_gesture, gestures[i]))
                 elif (i == len(gestures) - 1) and counter_gesture > 0:
                     utils.draw_ui(text="press R to repeat last record or Q to quit")
-                elif counter_gesture == NUMBER_OF_RECORDS_PER_GESTURE:
+                elif counter_gesture == args.n_records_gesture:
                     utils.draw_ui(text="press S to start record {}/{} of {}/{:02d}"
                                        " or press R to repeat record {} of previous gesture"
                                   .format(0,
-                                          NUMBER_OF_RECORDS_PER_GESTURE - 1,
+                                          args.n_records_gesture - 1,
                                           gestures[i + 1], len(gestures) - 1,
                                           counter_gesture - 1))
                     # counter_gesture -= 1
                 else:
                     utils.draw_ui(text="press S to start record {}/{} of {}/{:02d}"
                                        " or press R to repeat record {}".format(counter_gesture,
-                                                                                NUMBER_OF_RECORDS_PER_GESTURE - 1,
+                                                                                args.n_records_gesture - 1,
                                                                                 gestures[i], len(gestures) - 1,
                                                                                 counter_gesture - 1))
 
                 while True:
                         k = cv2.waitKey()
-                        if k == ord('s') and counter_gesture < NUMBER_OF_RECORDS_PER_GESTURE:
+                        if k == ord('s') and counter_gesture < args.n_records_gesture:
                             break
-                        elif k == ord('s') and counter_gesture == NUMBER_OF_RECORDS_PER_GESTURE:
+                        elif k == ord('s') and counter_gesture == args.n_records_gesture:
                             counter_gesture = 0
                             skip_gesture = True
                             rewrite = False
@@ -352,7 +353,7 @@ class Session:
                             skip_gesture = True
                             break
 
-                if counter_gesture < NUMBER_OF_RECORDS_PER_GESTURE and not skip_gesture:
+                if counter_gesture < args.n_records_gesture and not skip_gesture:
                     g = Gesture(i, gestures[i], counter_gesture, self.controller, self.cam, self.q, self.listener, cap,
                                 self.id_session, maps_initialized,
                                 left_coord=left_coordinates, left_coeff=left_coefficients,
@@ -395,7 +396,7 @@ def run(controller, cam):
         session_start = 0
         utils.save_session_info(session_id=session_counter)
         os.makedirs("./data")
-    elif os.path.exists("./data") and not os.path.exists(file_info):
+    elif os.path.exists("./data") and not os.path.exists(args.file_info):
         print("json file has to be present - check utils.save_session_info()")
         exit()
     else:
@@ -443,8 +444,6 @@ def str2bool(value):
     return value.lower() == 'true'
 
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--save_on_disk_frame_by_frame', dest='on_disk', default=False, type=str2bool)
 args = parser.parse_args()
 
 
